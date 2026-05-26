@@ -139,7 +139,7 @@ function StepCard({
     <motion.div
       style={{ opacity, y, scale }}
       className={`flex flex-col w-full max-w-[360px] md:max-w-[400px] gap-5 ${
-        index === 1 ? "flex-col-reverse" : ""
+        index === 1 ? "md:flex-col-reverse" : ""
       }`}
     >
       {/* Text block */}

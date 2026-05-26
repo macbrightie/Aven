@@ -37,7 +37,7 @@ export function SiteFooter() {
             </p>
 
             {/* Discord CTA container containing a separate Join button */}
-            <div className="inline-flex items-center justify-between gap-8 border border-white/10 rounded-full pl-8 pr-3 py-2 bg-[#161616]/40 mb-12 max-w-full">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-4 md:gap-8 border border-white/10 rounded-full md:pl-8 px-4 md:pr-3 py-2 bg-[#161616]/40 mb-12 max-w-full">
               <span className="text-[14px] md:text-[15px] font-serif text-white tracking-tight pr-2">
                 Get support from real people.
               </span>
@@ -61,7 +61,7 @@ export function SiteFooter() {
             </div>
 
             {/* Bottom bar */}
-            <div className="w-full flex items-center justify-between flex-wrap gap-4 text-[13px] font-sans text-white/35 pt-4">
+            <div className="w-full flex flex-col md:flex-row items-center justify-between gap-4 text-[13px] font-sans text-white/35 pt-4">
               <div className="flex items-center gap-4">
                 <span>© Aven 2026</span>
                 <span className="text-white/20">|</span>

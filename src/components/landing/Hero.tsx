@@ -63,7 +63,7 @@ export function Hero() {
         {/* Heading with smooth Typing animation */}
         <h1 className="font-serif leading-[1.2] tracking-tight">
           {/* First Line: Always on one line, color #4e4e55 */}
-          <span className="block text-[32px] sm:text-[44px] md:text-[60px] lg:text-[68px] whitespace-nowrap text-[#4e4e55]">
+          <span className="block text-[32px] sm:text-[44px] md:text-[60px] lg:text-[68px] text-[#4e4e55]">
             Your dream of{" "}
             <span className="text-[#104d3b] font-semibold inline-block pr-1 relative ml-[3px]">
               {currentText}
