@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Aven Mockup Inspector</title>
+  <style>
+    body {
+      background-color: #121214;
+      color: #e3e3e6;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      margin: 40px;
+      padding: 0;
+    }
+    h1 {
+      font-size: 28px;
+      font-weight: 600;
+      margin-bottom: 30px;
+      border-bottom: 1px solid #2d2d30;
+      padding-bottom: 15px;
+    }
+    .grid {
+      display: grid;
+      grid-template-cols: repeat(auto-fit, minmax(400px, 1fr));
+      gap: 30px;
+    }
+    .card {
+      background-color: #1a1a1e;
+      border: 1px solid #2c2c32;
+      border-radius: 12px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+    .card h2 {
+      font-size: 18px;
+      margin: 0;
+      color: #38bdf8;
+    }
+    img {
+      max-width: 100%;
+      border-radius: 8px;
+      border: 1px solid #333;
+      background-color: #0b0b0c;
+    }
+  </style>
+</head>
+<body>
+  <h1>Aven Modals Mockup Inspector</h1>
+  <div class="grid">
+    <div class="card">
+      <h2>Profile - Default State</h2>
+      <img src="./Profile-default.png" alt="Profile Default">
+    </div>
+    <div class="card">
+      <h2>Profile - Filled State</h2>
+      <img src="./Profile-filled.png" alt="Profile Filled">
+    </div>
+    <div class="card">
+      <h2>Settings - Default State</h2>
+      <img src="./Settings-default.png" alt="Settings Default">
+    </div>
+    <div class="card">
+      <h2>Settings - Connected State</h2>
+      <img src="./Settings-connected.png" alt="Settings Connected">
+    </div>
+  </div>
+</body>
+</html>
