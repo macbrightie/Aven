@@ -16,12 +16,32 @@ export class GeminiService {
     systemInstruction?: string,
     model: string = DEFAULT_MODEL
   ): Promise<string> {
+    // Sanitize messages for Gemini: must start with 'user' and roles must alternate
+    const sanitizedContents: any[] = [];
+    
+    for (const m of messages) {
+      const mappedRole = m.role === 'assistant' ? 'model' : m.role;
+      
+      if (sanitizedContents.length === 0) {
+        if (mappedRole === 'model') {
+          // Force start with user if the first message is from the assistant
+          sanitizedContents.push({ role: 'user', parts: [{ text: 'Hello' }] });
+        }
+        sanitizedContents.push({ role: mappedRole, parts: [{ text: m.content }] });
+      } else {
+        const lastContent = sanitizedContents[sanitizedContents.length - 1];
+        if (lastContent.role === mappedRole) {
+          // Merge consecutive messages of the same role
+          lastContent.parts[0].text += '\n\n' + m.content;
+        } else {
+          sanitizedContents.push({ role: mappedRole, parts: [{ text: m.content }] });
+        }
+      }
+    }
+
     const response = await ai.models.generateContent({
       model,
-      contents: messages.map(m => ({
-        role: m.role === 'assistant' ? 'model' : m.role,
-        parts: [{ text: m.content }],
-      })),
+      contents: sanitizedContents,
       config: {
         systemInstruction,
         temperature: 0.7,
