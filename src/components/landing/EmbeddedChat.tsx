@@ -173,7 +173,7 @@ function ChatPanel({
         ref={scrollContainerRef}
         className="flex-1 overflow-y-auto pt-6 pb-2 space-y-5 scrollbar-none"
       >
-        <div className="w-[60%] mx-auto space-y-5">
+        <div className="w-full px-[12px] md:w-[60%] md:px-0 mx-auto space-y-5">
         {messages.map((msg, i) => (
           <ChatMessage
             key={msg.id}
@@ -186,8 +186,8 @@ function ChatPanel({
         </div>
       </div>
 
-      {/* Input bar — also 60% width, centred */}
-      <div className="w-[60%] mx-auto pb-6 pt-3 flex-shrink-0">
+      {/* Input bar — also 60% width on md, full width with 12px padding on mobile */}
+      <div className="w-full px-[12px] md:w-[60%] md:px-0 mx-auto pb-6 pt-3 flex-shrink-0">
         <div
           className="rounded-[20px] border border-[#1a1a1a]/10 transition-all duration-300 overflow-hidden bg-white shadow-sm flex flex-col"
         >
