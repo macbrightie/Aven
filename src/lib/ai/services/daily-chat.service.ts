@@ -1,4 +1,4 @@
-import { GeminiService } from './gemini';
+import { OpenAIService } from './openai';
 import { DAILY_CHAT_SYSTEM_PROMPT, buildDailyChatPrompt } from '../prompts/daily-chat';
 import { buildChatSystemPrompt } from '../utils/context-builder';
 import { retrieveMemories } from '../utils/memory-retrieval';
@@ -123,13 +123,13 @@ export class DailyChatService {
       coreMemories: core.map((c) => c.content),
       relevantMemories: relevant.map((r) => r.content),
       lastThreeMessages: messages.slice(-3).map((m) => ({
-        role: m.role === 'assistant' || m.role === 'model' ? 'aven' : 'user',
+        role: m.role === 'assistant' ? 'aven' : 'user',
         content: m.content,
       })),
     });
 
     // 8. Generate response from Gemini
-    return GeminiService.generateChatResponse(messages, chatSystemPrompt);
+    return OpenAIService.generateChatResponse(messages, chatSystemPrompt);
   }
 
   /**
@@ -215,7 +215,7 @@ export class DailyChatService {
     };
 
     try {
-      const result = await GeminiService.generateStructuredResponse<HealthScoreResult>(
+      const result = await OpenAIService.generateStructuredResponse<HealthScoreResult>(
         prompt,
         schema,
         HEALTH_SCORE_SYSTEM_PROMPT

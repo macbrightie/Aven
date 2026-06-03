@@ -122,7 +122,7 @@ export async function POST(request: NextRequest) {
           .eq('id', activeConversationId)
           .single();
         
-        const finalMessages = [...(currentConv?.messages || []), { role: 'model', content: assistantMessage }];
+        const finalMessages = [...(currentConv?.messages || []), { role: 'assistant', content: assistantMessage }];
         await supabase
           .from('conversations')
           .update({ messages: finalMessages })

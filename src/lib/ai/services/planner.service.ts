@@ -14,6 +14,7 @@ export class PlannerService {
       // Using OpenAI's JSON mode which guarantees valid JSON output matching the prompt's instructions.
       const data = await OpenAIService.generateStructuredResponse<PlanData>(
         prompt,
+        null,
         PLAN_GENERATION_SYSTEM_PROMPT
       );
 

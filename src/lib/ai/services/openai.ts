@@ -43,6 +43,7 @@ export class OpenAIService {
    */
   static async generateStructuredResponse<T>(
     prompt: string,
+    schema?: any | null,
     systemInstruction?: string,
     model: string = DEFAULT_MODEL
   ): Promise<T> {

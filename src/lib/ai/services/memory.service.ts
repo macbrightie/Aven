@@ -1,4 +1,4 @@
-import { GeminiService } from './gemini';
+import { OpenAIService } from './openai';
 import { MEMORY_EXTRACTION_SYSTEM_PROMPT, buildMemoryExtractionPrompt } from '../prompts/memory-extraction';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
@@ -50,7 +50,7 @@ export class MemoryService {
     // Grab the last 5 messages to extract context
     const lastFive = messages.slice(-5);
     const lastFiveFormatted = lastFive
-      .map((m: any) => `${m.role === 'aven' || m.role === 'assistant' || m.role === 'model' ? 'Aven' : 'User'}: ${m.content}`)
+      .map((m: any) => `${m.role === 'aven' || m.role === 'assistant' ? 'Aven' : 'User'}: ${m.content}`)
       .join('\n');
 
     // 2. Fetch existing memories to present to the extraction engine as context
@@ -101,7 +101,7 @@ export class MemoryService {
     };
 
     try {
-      const extraction = await GeminiService.generateStructuredResponse<ExtractionResult>(
+      const extraction = await OpenAIService.generateStructuredResponse<ExtractionResult>(
         prompt,
         schema,
         MEMORY_EXTRACTION_SYSTEM_PROMPT

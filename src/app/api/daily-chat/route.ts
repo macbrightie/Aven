@@ -89,7 +89,7 @@ export async function POST(request: NextRequest) {
     // 7. Save Aven's response to the conversation database
     const finalMessages = [
       ...updatedMessages,
-      { role: 'model', content: reply } // Stored as 'model' or 'assistant' perSupabase schema format
+      { role: 'assistant', content: reply }
     ];
 
     await supabase

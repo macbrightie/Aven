@@ -160,7 +160,7 @@ export async function POST(request: NextRequest) {
           .update({
             messages: [
               ...updatedMessages,
-              { role: 'model', content: reply }
+              { role: 'assistant', content: reply }
             ],
             completed: isComplete
           })
@@ -227,7 +227,7 @@ export async function POST(request: NextRequest) {
         // Save Aven's reply to the database
         const finalMessages = [
           ...updatedMessages,
-          { role: 'model', content: reply }
+          { role: 'assistant', content: reply }
         ];
 
         await supabase
