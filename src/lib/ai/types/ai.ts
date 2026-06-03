@@ -1,5 +1,5 @@
 export interface ConversationMessage {
-  role: 'user' | 'assistant' | 'model'; // 'model' for gemini compatibility if needed, but sticking to 'user'|'assistant' helps avoid migrating the DB schema.
+  role: 'user' | 'assistant' | 'system';
   content: string;
 }
 
@@ -9,8 +9,8 @@ export interface AIStreamChunk {
   error?: string;
 }
 
-// Added for Gemini structured output
+// Added for structured output
 export interface StructuredGenerationOptions<T> {
-  schema: any; // Using any for schema to avoid complex type dependencies for now
+  schema: any;
   systemPrompt?: string;
 }
