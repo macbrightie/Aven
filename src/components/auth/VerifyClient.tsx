@@ -32,6 +32,43 @@ export function VerifyClient() {
         const { error } = await supabase.auth.exchangeCodeForSession(code);
         if (error) throw error;
         
+        const transcript = localStorage.getItem("aven_onboarding_transcript");
+        if (transcript) {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user) {
+            try {
+              const rawMessages = JSON.parse(transcript);
+              const payloadMessages = rawMessages.map((m: any) => ({
+                role: m.role === 'assistant' || m.role === 'aven' ? 'assistant' as const : 'user' as const,
+                content: m.content || m.text || '',
+              }));
+
+              const { data: conv, error: convError } = await supabase
+                .from('conversations')
+                .insert({
+                  user_id: user.id,
+                  messages: payloadMessages,
+                  completed: true
+                })
+                .select()
+                .single();
+
+              if (!convError && conv) {
+                localStorage.removeItem("aven_onboarding_transcript");
+                setStatus('success');
+                setTimeout(() => {
+                  router.push(`/building?conversationId=${conv.id}`);
+                }, 1500);
+                return;
+              } else {
+                console.error('[VerifyClient] Database insert error:', convError);
+              }
+            } catch (parseError) {
+              console.error('[VerifyClient] Failed to parse or save transcript:', parseError);
+            }
+          }
+        }
+
         setStatus('success');
         setTimeout(() => {
           router.push('/dashboard');

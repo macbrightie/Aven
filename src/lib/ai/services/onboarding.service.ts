@@ -11,6 +11,6 @@ export class OnboardingService {
   }
 
   static isProfileComplete(lastAssistantMessage: string): boolean {
-    return lastAssistantMessage.includes('[PROFILE_COMPLETE]');
+    return lastAssistantMessage.includes('[PROFILE_READY]');
   }
 }
