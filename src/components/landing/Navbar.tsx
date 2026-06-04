@@ -28,6 +28,16 @@ export function Navbar() {
     });
   }, []);
 
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const searchParams = new URLSearchParams(window.location.search);
+      const code = searchParams.get('code');
+      if (code) {
+        router.push(`/verify?code=${code}`);
+      }
+    }
+  }, [router]);
+
   const handleManageProgress = () => {
     if (user) {
       router.push('/dashboard');
