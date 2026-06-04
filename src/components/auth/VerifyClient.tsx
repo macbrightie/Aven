@@ -30,7 +30,15 @@ export function VerifyClient() {
 
       try {
         const { error } = await supabase.auth.exchangeCodeForSession(code);
-        if (error) throw error;
+        if (error) {
+          // If code exchange fails, check if we already have a session (e.g. email pre-fetch)
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session) {
+            console.log('[VerifyClient] Code exchange failed but session exists. Proceeding.');
+          } else {
+            throw error;
+          }
+        }
         
         const transcript = localStorage.getItem("aven_onboarding_transcript");
         if (transcript) {
