@@ -170,3 +170,20 @@ create index if not exists idx_plans_user_id on public.plans(user_id);
 create index if not exists idx_daily_cards_user_plan on public.daily_cards(user_id, plan_id);
 create index if not exists idx_daily_cards_day_number on public.daily_cards(day_number);
 create index if not exists idx_sprint_progress_user_day on public.sprint_progress(user_id, day_number);
+
+-- ============================================================
+-- TRIGGER: Sync auth.users to public.users on signup
+-- ============================================================
+create or replace function public.handle_new_user()
+returns trigger as $$
+begin
+  insert into public.users (id, email)
+  values (new.id, new.email)
+  on conflict (id) do nothing;
+  return new;
+end;
+$$ language plpgsql security definer;
+
+create or replace trigger on_auth_user_created
+  after insert on auth.users
+  for each row execute procedure public.handle_new_user();
