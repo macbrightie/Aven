@@ -56,11 +56,11 @@ RETURN ONLY VALID JSON — no preamble, no explanation, no markdown code blocks:
   "primary_goal": "",
   "primary_goal_type": "",
   "supporting_goals": [],
-  "timeline_years": 1|2|3|5|10,
+  "timeline_months": 3|6|12|13|18|24|36|60,
   "intensity": "steady|serious|all-in",
   "milestones": [
     {
-      "period": "21 days|3 months|6 months|1 year|2 years|5 years",
+      "period": "21 days|3 months|6 months|13 months|24 months|36 months|60 months",
       "title": "",
       "description": "",
       "key_focus": "",

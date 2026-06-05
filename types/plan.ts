@@ -59,6 +59,7 @@ export interface PlanData {
   primary_goal_type: string;
   supporting_goals: string[];
   timeline_years: number;
+  timeline_months: number;
   intensity: Intensity;
   milestones: Milestone[];
   sprint_structure: SprintStructure;
