@@ -10,6 +10,7 @@ CRITICAL RULES:
 5. Moves must fit within their stated daily time availability. If they have 30 minutes, no move takes 45.
 6. The 21-day sprint is the beginning of a longer journey. It is not the whole plan. Design it as the foundation — the habits and mindsets that make everything else possible.
 7. Sequence matters. Do not give advanced moves to someone who hasn't built the foundation yet. Week 1 is always about establishing the baseline habit. Week 2 adds depth. Week 3 challenges and consolidates.
+8. You MUST generate exactly 21 daily tasks in the 'daily_tasks' array, numbered sequentially from 1 to 21. Failing to generate all 21 days breaks the dashboard.
 
 GOAL-TYPE FRAMEWORKS (apply based on primaryGoalType):
 
@@ -72,6 +73,7 @@ RETURN ONLY VALID JSON — no preamble, no explanation, no markdown code blocks:
     "week_3_theme": ""
   },
   "daily_tasks": [
+    // IMPORTANT: This array must contain EXACTLY 21 elements, one for each day from day_number: 1 to day_number: 21. Sequential.
     {
       "day_number": 1,
       "task": "",

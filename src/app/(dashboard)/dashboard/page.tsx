@@ -29,13 +29,15 @@ interface DashboardNavProps {
   onOpenProfile: () => void;
   telegramConnected: boolean;
   onToggleTelegram: () => void;
+  profilePhoto: string | null;
 }
  
 function DashboardNav({ 
   onOpenSettings, 
   onOpenProfile, 
   telegramConnected, 
-  onToggleTelegram 
+  onToggleTelegram,
+  profilePhoto
 }: DashboardNavProps) {
   return (
     <nav className="w-full flex items-center justify-between px-6 md:px-8 py-4">
@@ -85,14 +87,22 @@ function DashboardNav({
           className="relative cursor-pointer hover:opacity-90 active:scale-95 transition-all"
           title="Edit Profile"
         >
-          <div className="w-9 h-9 rounded-full overflow-hidden border border-black/10">
-            <Image
-              src="/UI-design-and-element/BRIGHT MBA AVI 2 1.png"
-              alt="Profile"
-              width={36}
-              height={36}
-              className="w-full h-full object-cover"
-            />
+          <div className="w-9 h-9 rounded-full overflow-hidden border border-black/10 flex items-center justify-center bg-[#104d3b]">
+            {profilePhoto ? (
+              <img
+                src={profilePhoto}
+                alt="Profile"
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <Image
+                src="/UI-design-and-element/BRIGHT MBA AVI 2 1.png"
+                alt="Profile"
+                width={36}
+                height={36}
+                className="w-full h-full object-cover"
+              />
+            )}
           </div>
           <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-[#104d3b] border-2 border-white" />
         </div>
@@ -510,20 +520,27 @@ interface ProfileModalProps {
   isOpen: boolean;
   onClose: () => void;
   displayName: string;
-  onSave: (name: string, username: string) => void;
+  onSave: (name: string, username: string, photo: string | null) => void;
   username: string;
+  userId?: string;
 }
-
-function ProfileModal({ isOpen, onClose, displayName, onSave, username }: ProfileModalProps) {
+ 
+function ProfileModal({ isOpen, onClose, displayName, onSave, username, userId }: ProfileModalProps) {
   const [tempDisplayName, setTempDisplayName] = useState(displayName);
   const [tempUsername, setTempUsername] = useState(username);
+  const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (isOpen) {
       setTempDisplayName(displayName);
       setTempUsername(username);
+      if (userId) {
+        const savedPhoto = localStorage.getItem(`aven_avatar_${userId}`);
+        setProfilePhoto(savedPhoto);
+      }
     }
-  }, [isOpen, displayName, username]);
+  }, [isOpen, displayName, username, userId]);
 
   if (!isOpen) return null;
 
@@ -537,8 +554,27 @@ function ProfileModal({ isOpen, onClose, displayName, onSave, username }: Profil
     .toUpperCase() || 'BM';
 
   const handleSave = () => {
-    onSave(tempDisplayName, tempUsername);
+    onSave(tempDisplayName, tempUsername, profilePhoto);
     onClose();
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = reader.result as string;
+        setProfilePhoto(base64String);
+        if (userId) {
+          localStorage.setItem(`aven_avatar_${userId}`, base64String);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const triggerFileInput = () => {
+    fileInputRef.current?.click();
   };
 
   const handleLogout = async () => {
@@ -568,13 +604,21 @@ function ProfileModal({ isOpen, onClose, displayName, onSave, username }: Profil
 
         {/* Avatar Area */}
         <div className="relative mb-6">
-          <div className="w-[110px] h-[110px] rounded-full bg-[#104D3B] flex items-center justify-center shadow-md select-none hover:scale-105 active:scale-95 transition-transform duration-300">
-            <span className="text-[36px] font-sans font-bold text-white tracking-wider">
-              {initials}
-            </span>
+          <div 
+            onClick={triggerFileInput}
+            className="w-[110px] h-[110px] rounded-full bg-[#104D3B] flex items-center justify-center shadow-md select-none hover:scale-105 active:scale-95 transition-transform duration-300 overflow-hidden cursor-pointer"
+          >
+            {profilePhoto ? (
+              <img src={profilePhoto} alt="Avatar" className="w-full h-full object-cover" />
+            ) : (
+              <span className="text-[36px] font-sans font-bold text-white tracking-wider">
+                {initials}
+              </span>
+            )}
           </div>
           <button 
-            className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-white border border-black/5 shadow-sm flex items-center justify-center hover:bg-[#F5F5F7] hover:scale-110 active:scale-95 transition-all duration-300"
+            onClick={triggerFileInput}
+            className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-white border border-black/5 shadow-sm flex items-center justify-center hover:bg-[#F5F5F7] hover:scale-110 active:scale-95 transition-all duration-300 cursor-pointer"
             title="Upload photo"
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1a1a1a" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
@@ -582,6 +626,13 @@ function ProfileModal({ isOpen, onClose, displayName, onSave, username }: Profil
               <circle cx="12" cy="13" r="4"/>
             </svg>
           </button>
+          <input 
+            type="file" 
+            ref={fileInputRef} 
+            onChange={handleFileChange} 
+            accept="image/*" 
+            className="hidden" 
+          />
         </div>
 
         {/* Inputs */}
@@ -832,6 +883,7 @@ export default function DashboardPage() {
   // Profile Form States
   const [profileName, setProfileName] = useState('Bright Mac');
   const [profileUsername, setProfileUsername] = useState('');
+  const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
 
   // Settings Panel States
   const [telegramConnected, setTelegramConnected] = useState(false);
@@ -864,6 +916,12 @@ export default function DashboardPage() {
           return;
         }
         setUser(authUser);
+
+        // Load avatar from localStorage
+        const savedPhoto = localStorage.getItem(`aven_avatar_${authUser.id}`);
+        if (savedPhoto) {
+          setProfilePhoto(savedPhoto);
+        }
 
         // 1. Fetch profile indicators
         const { data: userProfile } = await supabase
@@ -999,6 +1057,7 @@ export default function DashboardPage() {
         onOpenProfile={() => setShowProfileModal(true)}
         telegramConnected={telegramConnected}
         onToggleTelegram={handleToggleTelegram}
+        profilePhoto={profilePhoto}
       />
 
       <main className="flex-1 px-6 md:px-8 pb-10">
@@ -1007,8 +1066,8 @@ export default function DashboardPage() {
             <h1 className="font-sans text-[36px] md:text-[48px] leading-tight text-[#1a1a1a] tracking-[-0.03em]">
               Welcome <span className="font-bold">{firstName}.</span>
             </h1>
-            <p className="font-sans text-[36px] md:text-[48px] font-medium text-[#4e4e55] leading-tight mt-0.5 tracking-[-0.03em]">
-              Start building&nbsp; the dream.
+            <p className="font-sans text-[20px] md:text-[24px] font-medium text-[#4e4e55] leading-relaxed mt-2 tracking-tight max-w-3xl">
+              {plan?.plan_data?.motivational_anchor || 'Start building the dream.'}
             </p>
           </div>
           <div className="flex items-center gap-3 mt-1 flex-shrink-0">
@@ -1080,10 +1139,10 @@ export default function DashboardPage() {
 
           <div className="mt-5 px-[1.5%]">
             <h2 className="text-[#1a1a1a] text-[24px] font-sans font-medium leading-snug">
-              At the end of this 21 days you&apos;d be able to...
+              {plan?.plan_data?.sprint_theme ? `Sprint Theme: ${plan.plan_data.sprint_theme}` : "At the end of this 21 days you'd be able to..."}
             </h2>
-            <p className="text-[#4e4e55] text-[14px] font-sans mt-1.5">
-              and this will help you do x and y and ultimately z in 3 to 5 years
+            <p className="text-[#4e4e55] text-[14px] font-sans mt-1.5 max-w-4xl">
+              {plan?.plan_data?.summary || "and this will help you do x and y and ultimately z in 3 to 5 years"}
             </p>
           </div>
         </div>
@@ -1095,9 +1154,9 @@ export default function DashboardPage() {
           <div className="flex flex-col gap-4">
             <MapBanner />
             <div className="grid grid-cols-3 gap-3">
-              <StatCard value="4" label={"Goals\nPending"} accent />
-              <StatCard value="74" unit="DAYS" label={"Longest\nstreak"} />
-              <StatCard value="5" unit="YEARS" label={"Dream\nduration"} />
+              <StatCard value={stats.goalsPending.toString()} label={"Goals\nPending"} accent />
+              <StatCard value={stats.longestStreak.toString()} unit="DAYS" label={"Longest\nstreak"} />
+              <StatCard value={stats.dreamDuration.toString()} unit="YEARS" label={"Dream\nduration"} />
             </div>
             {/* Upgrade to Pro */}
             <div className="rounded-[20px] bg-[#1a1a1a] p-6 flex flex-col justify-between min-h-[130px]">
@@ -1155,9 +1214,13 @@ export default function DashboardPage() {
         onClose={() => setShowProfileModal(false)}
         displayName={profileName}
         username={profileUsername}
-        onSave={(name, user) => {
+        userId={user?.id}
+        onSave={(name, username, photo) => {
           setProfileName(name);
-          setProfileUsername(user);
+          setProfileUsername(username);
+          if (photo) {
+            setProfilePhoto(photo);
+          }
         }}
       />
 
@@ -1165,7 +1228,7 @@ export default function DashboardPage() {
         isOpen={showSettingsModal}
         onClose={() => setShowSettingsModal(false)}
         telegramConnected={telegramConnected}
-        onToggleTelegram={() => setTelegramConnected(!telegramConnected)}
+        onToggleTelegram={handleToggleTelegram}
         whatsappConnected={whatsappConnected}
         onToggleWhatsApp={() => setWhatsappConnected(!whatsappConnected)}
         activeLanguage={activeLanguage}
