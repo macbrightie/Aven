@@ -1028,7 +1028,7 @@ export default function DashboardPage() {
       .replace(/\//g, '_')
       .replace(/=+$/, '');
     
-    const botUrl = `https://t.me/AvenCoachBot?start=${token}`;
+    const botUrl = `https://t.me/AvenBot?start=${token}`;
     window.open(botUrl, '_blank');
   };
 
