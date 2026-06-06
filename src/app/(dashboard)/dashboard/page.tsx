@@ -868,7 +868,7 @@ function RoadmapOverlay({ isOpen, onClose, plan, dailyCards }: RoadmapOverlayPro
   ];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#131316]/95 backdrop-blur-md text-white">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-[#131316]/95 backdrop-blur-md text-white flex justify-center items-start md:items-center p-4">
       <div className="absolute top-6 left-6 md:left-8 right-6 md:right-8 flex justify-between items-center z-10 select-none">
         <div className="flex items-center gap-2">
           <div className="w-5 h-5 rounded-full bg-[#104d3b] flex items-center justify-center">
@@ -888,7 +888,7 @@ function RoadmapOverlay({ isOpen, onClose, plan, dailyCards }: RoadmapOverlayPro
         </button>
       </div>
 
-      <div className="w-full max-w-4xl px-4 flex flex-col justify-center items-center h-full mt-12 relative overflow-y-auto">
+      <div className="w-full max-w-4xl px-4 flex flex-col justify-center items-center h-full mt-12 relative overflow-visible">
         <h2 className="text-[28px] md:text-[36px] font-serif font-light text-center mb-2 tracking-tight">
           Interactive Skill Tree
         </h2>
@@ -1463,8 +1463,8 @@ export default function DashboardPage() {
         console.log('[DEBUG-load] userProfile:', userProfile);
         console.log('[DEBUG-load] authUser.user_metadata:', authUser?.user_metadata);
 
-        const dbName = userProfile?.display_name || authUser?.user_metadata?.display_name || cachedName || userProfile?.email?.split('@')[0] || authUser?.email?.split('@')[0] || 'You';
-        const dbUsername = userProfile?.username || authUser?.user_metadata?.username || cachedUsername || '';
+        const dbName = cachedName || userProfile?.display_name || authUser?.user_metadata?.display_name || userProfile?.email?.split('@')[0] || authUser?.email?.split('@')[0] || 'You';
+        const dbUsername = cachedUsername || userProfile?.username || authUser?.user_metadata?.username || '';
         console.log('[DEBUG-load] resolved dbName:', dbName);
         console.log('[DEBUG-load] resolved dbUsername:', dbUsername);
 
