@@ -1457,13 +1457,32 @@ export default function DashboardPage() {
           .eq('id', authUser.id)
           .maybeSingle();
 
+        // 1.5. Fetch latest completed conversation to extract name from onboarding questions
+        const { data: latestConv } = await supabase
+          .from('conversations')
+          .select('extracted_profile')
+          .eq('user_id', authUser.id)
+          .eq('completed', true)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        const onboardingName = (latestConv?.extracted_profile as any)?.name || '';
+
         console.log('[DEBUG-load] authUser.id:', authUser.id);
         console.log('[DEBUG-load] cachedName:', cachedName);
         console.log('[DEBUG-load] cachedUsername:', cachedUsername);
         console.log('[DEBUG-load] userProfile:', userProfile);
+        console.log('[DEBUG-load] onboardingName:', onboardingName);
         console.log('[DEBUG-load] authUser.user_metadata:', authUser?.user_metadata);
 
-        const dbName = cachedName || userProfile?.display_name || authUser?.user_metadata?.display_name || userProfile?.email?.split('@')[0] || authUser?.email?.split('@')[0] || 'You';
+        const dbName = cachedName 
+          || userProfile?.display_name 
+          || authUser?.user_metadata?.display_name 
+          || onboardingName 
+          || userProfile?.email?.split('@')[0] 
+          || authUser?.email?.split('@')[0] 
+          || 'You';
         const dbUsername = cachedUsername || userProfile?.username || authUser?.user_metadata?.username || '';
         console.log('[DEBUG-load] resolved dbName:', dbName);
         console.log('[DEBUG-load] resolved dbUsername:', dbUsername);
@@ -1763,7 +1782,7 @@ export default function DashboardPage() {
         <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-5 mt-2 mb-7">
           <div>
             <h1 className="font-sans text-[36px] md:text-[48px] leading-tight text-[#1a1a1a] tracking-[-0.03em]">
-              Hey <span className="font-bold">{profileUsername || firstName}.</span>
+              Hey <span className="font-bold">{profileName}.</span>
             </h1>
             <p className="font-sans text-[20px] md:text-[24px] font-medium text-[#4e4e55] leading-relaxed mt-2 tracking-tight max-w-3xl">
               {plan?.plan_data?.motivational_anchor || 'Start building the dream.'}
