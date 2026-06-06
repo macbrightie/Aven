@@ -4,6 +4,12 @@ import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { createClient } from '@/lib/supabase/client';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from '@/components/ui/sheet';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Slider } from '@/components/ui/slider';
+import { Button } from '@/components/ui/Button';
+import { Label } from '@/components/ui/label';
  
 type ViewMode = 'Grid' | 'Swipe';
  
@@ -537,7 +543,7 @@ function StatCard({ value, unit, label, accent }: { value: string; unit?: string
   );
 }
 
-// ─── Update Goals Drawer ──────────────────────────────────────────────────────
+// ─── Update Goals Drawer (Shadcn Sheet) ───────────────────────────────────────
 interface UpdateGoalsDrawerProps {
   isOpen: boolean;
   onClose: () => void;
@@ -557,8 +563,6 @@ function UpdateGoalsDrawer({ isOpen, onClose, supportingGoals, primaryGoal, onSa
     setTempPrimary(primaryGoal);
     setTempSupporting(supportingGoals || []);
   }, [isOpen, primaryGoal, supportingGoals]);
-
-  if (!isOpen) return null;
 
   const handleAddGoal = (e: React.FormEvent) => {
     e.preventDefault();
@@ -587,76 +591,56 @@ function UpdateGoalsDrawer({ isOpen, onClose, supportingGoals, primaryGoal, onSa
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end">
-      <div 
-        onClick={onClose}
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300 animate-in fade-in"
-      />
-      <div className="relative w-full max-w-[460px] h-full bg-[#F4F0EB] text-[#1a1a1a] shadow-2xl p-8 flex flex-col justify-between z-10 animate-in slide-in-from-right duration-300">
+    <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <SheetContent side="right" className="flex flex-col p-0">
         {showConfetti && (
           <div className="absolute inset-0 pointer-events-none flex items-center justify-center overflow-hidden z-50">
             <div className="text-[40px] animate-ping">🎉✨💥</div>
           </div>
         )}
 
-        <div className="flex-1 flex flex-col overflow-y-auto">
-          <div className="flex justify-between items-center mb-8">
-            <h3 className="font-sans font-medium text-[20px] text-[#1a1a1a] tracking-tight select-none">
-              Your Goals
-            </h3>
-            <button 
-              onClick={onClose}
-              className="w-10 h-10 rounded-[12px] bg-[#ECE8E2] hover:bg-[#E3DDD4] flex items-center justify-center text-[#1a1a1a] transition-all hover:scale-105 active:scale-95 shadow-sm"
-              aria-label="Close goals"
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="18" y1="6" x2="6" y2="18"></line>
-                <line x1="6" y1="6" x2="18" y2="18"></line>
-              </svg>
-            </button>
-          </div>
+        <SheetHeader className="p-8 pb-4">
+          <SheetTitle>Your Goals</SheetTitle>
+          <SheetDescription>Edit your primary goal and manage your supporting checklist.</SheetDescription>
+        </SheetHeader>
 
-          <div className="mb-6 flex flex-col text-left">
-            <label className="text-[12px] font-sans font-semibold text-[#6f6f77] mb-2 select-none uppercase tracking-wider">
-              Primary Goal
-            </label>
-            <input 
-              type="text" 
+        <div className="flex-1 flex flex-col overflow-y-auto px-8 gap-6 py-4">
+          {/* Primary Goal */}
+          <div className="flex flex-col text-left">
+            <Label className="mb-2">Primary Goal</Label>
+            <input
+              type="text"
               value={tempPrimary}
               onChange={(e) => setTempPrimary(e.target.value)}
               className="w-full px-4 py-3 rounded-[12px] bg-[#ECE8E2] border border-transparent focus:border-black/10 focus:bg-[#FBFAFA] text-[#1a1a1a] text-[14px] font-sans outline-none transition-all shadow-inner"
             />
           </div>
 
-          <div className="mb-6 flex flex-col text-left flex-1">
-            <label className="text-[12px] font-sans font-semibold text-[#6f6f77] mb-3 select-none uppercase tracking-wider">
-              Supporting Goals Checklist
-            </label>
-            <div className="flex-1 overflow-y-auto space-y-3 pr-2" style={{ maxHeight: '240px' }}>
+          {/* Supporting Goals */}
+          <div className="flex flex-col text-left flex-1">
+            <Label className="mb-3">Supporting Goals Checklist</Label>
+            <div className="overflow-y-auto space-y-2.5 pr-1" style={{ maxHeight: '260px' }}>
               {tempSupporting.map((goal, index) => {
                 const isCompleted = completedGoals.includes(goal);
                 return (
-                  <div 
+                  <div
                     key={index}
                     className="flex items-center justify-between p-3.5 rounded-[12px] bg-[#ECE8E2] border border-black/5 hover:bg-[#E3DDD4] transition-colors"
                   >
-                    <div 
+                    <div
                       onClick={() => toggleGoalCompleted(goal)}
                       className="flex items-center gap-3 cursor-pointer flex-1"
                     >
                       <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 border border-black/20 bg-white">
-                        {isCompleted && (
-                          <div className="w-3 h-3 rounded-full bg-[#104d3b]" />
-                        )}
+                        {isCompleted && <div className="w-3 h-3 rounded-full bg-[#104d3b]" />}
                       </div>
                       <span className={`text-[13.5px] font-sans text-left transition-all duration-300 ${isCompleted ? 'text-black/45 line-through' : 'text-black'}`}>
                         {goal}
                       </span>
                     </div>
-                    
-                    <button 
+                    <button
                       onClick={() => handleRemoveGoal(index)}
-                      className="text-red-500 hover:text-red-700 opacity-60 hover:opacity-100 p-1"
+                      className="text-red-500 hover:text-red-700 opacity-60 hover:opacity-100 p-1 ml-2"
                       title="Delete Goal"
                     >
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -667,52 +651,39 @@ function UpdateGoalsDrawer({ isOpen, onClose, supportingGoals, primaryGoal, onSa
                   </div>
                 );
               })}
-
               {tempSupporting.length === 0 && (
                 <p className="text-[13px] font-sans text-black/45 text-center mt-6">
-                  No supporting goals added yet. Add one below!
+                  No supporting goals yet. Add one below!
                 </p>
               )}
             </div>
           </div>
 
-          <form onSubmit={handleAddGoal} className="flex gap-2.5 mb-6">
-            <input 
+          {/* Add Goal Input */}
+          <form onSubmit={handleAddGoal} className="flex gap-2.5">
+            <input
               type="text"
               placeholder="Add a supporting goal..."
               value={newGoalText}
               onChange={(e) => setNewGoalText(e.target.value)}
               className="flex-1 px-4 py-3 rounded-[12px] bg-[#ECE8E2] text-[#1a1a1a] text-[13.5px] font-sans border border-transparent outline-none focus:bg-white focus:border-black/10 transition-all shadow-inner placeholder-black/25"
             />
-            <button 
-              type="submit"
-              className="px-4 py-3 rounded-[12px] bg-[#1a1a1a] text-white hover:bg-[#333] font-sans font-medium text-[13px] transition-colors"
-            >
-              Add
-            </button>
+            <Button type="submit" size="default">Add</Button>
           </form>
         </div>
 
-        <div className="flex gap-3">
-          <button 
-            onClick={onClose}
-            className="flex-1 py-3 rounded-[12px] border border-black/15 hover:bg-black/5 active:scale-95 text-[#1a1a1a] text-[14px] font-sans font-medium transition-all shadow-sm"
-          >
-            Cancel
-          </button>
-          <button 
-            onClick={handleSave}
-            className="flex-1 py-3 rounded-[12px] bg-[#104d3b] hover:bg-[#0d3f30] active:scale-95 text-white text-[14px] font-sans font-medium transition-all shadow-sm"
-          >
-            Save Goals
-          </button>
-        </div>
-      </div>
-    </div>
+        <SheetFooter className="p-8 pt-4 border-t border-black/5">
+          <Button variant="outline" onClick={onClose} className="flex-1 py-6">Cancel</Button>
+          <Button variant="green" onClick={handleSave} className="flex-1 py-6">Save Goals</Button>
+        </SheetFooter>
+      </SheetContent>
+    </Sheet>
   );
 }
 
-// ─── Adjust Plan Modal ────────────────────────────────────────────────────────
+
+// ─── Adjust Plan Modal (Shadcn Dialog) ───────────────────────────────────────
+
 interface AdjustPlanModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -753,15 +724,10 @@ function AdjustPlanModal({ isOpen, onClose, currentIntensity, currentTimelineMon
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div 
-        onClick={onClose}
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300 animate-in fade-in"
-      />
-      
-      <div className="relative bg-[#F4F0EB] text-[#1a1a1a] rounded-[24px] overflow-hidden p-8 w-full max-w-[500px] shadow-2xl flex flex-col justify-between z-10 animate-in fade-in zoom-in-95 duration-200">
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="p-0 max-w-[520px] overflow-hidden">
         {loading && (
-          <div className="absolute inset-0 bg-[#F4F0EB]/80 backdrop-blur-sm flex flex-col items-center justify-center z-50">
+          <div className="absolute inset-0 bg-[#F4F0EB]/90 backdrop-blur-sm flex flex-col items-center justify-center z-50 rounded-[24px]">
             <svg className="animate-spin w-8 h-8 text-[#104d3b] mb-3" viewBox="0 0 24 24" fill="none">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
@@ -770,28 +736,15 @@ function AdjustPlanModal({ isOpen, onClose, currentIntensity, currentTimelineMon
           </div>
         )}
 
-        <div className="flex justify-between items-center mb-6">
-          <h3 className="font-sans font-medium text-[20px] text-[#1a1a1a] tracking-tight select-none">
-            Adjust Overall Plan
-          </h3>
-          <button 
-            type="button"
-            onClick={onClose}
-            className="w-10 h-10 rounded-[12px] bg-[#ECE8E2] hover:bg-[#E3DDD4] flex items-center justify-center text-[#1a1a1a] transition-all hover:scale-105 active:scale-95 shadow-sm"
-            aria-label="Close dialog"
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="18" y1="6" x2="6" y2="18"></line>
-              <line x1="6" y1="6" x2="18" y2="18"></line>
-            </svg>
-          </button>
-        </div>
+        <DialogHeader className="p-8 pb-4">
+          <DialogTitle>Adjust Overall Plan</DialogTitle>
+          <DialogDescription>Change your sprint intensity, timeline, or tell Aven what's changed in your life.</DialogDescription>
+        </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-5 text-left">
+        <form onSubmit={handleSubmit} className="space-y-6 px-8 pb-2 text-left">
+          {/* Sprint Intensity */}
           <div className="flex flex-col">
-            <label className="text-[12px] font-sans font-semibold text-[#6f6f77] mb-2 uppercase tracking-wider">
-              Sprint Intensity
-            </label>
+            <Label className="mb-2">Sprint Intensity</Label>
             <div className="grid grid-cols-3 gap-2 bg-[#ECE8E2] rounded-[10px] p-1">
               {(['steady', 'serious', 'all-in'] as const).map((mode) => (
                 <button
@@ -810,25 +763,20 @@ function AdjustPlanModal({ isOpen, onClose, currentIntensity, currentTimelineMon
             </div>
           </div>
 
+          {/* Timeline Slider — using Shadcn Slider */}
           <div className="flex flex-col">
-            <div className="flex justify-between items-center mb-1">
-              <label className="text-[12px] font-sans font-semibold text-[#6f6f77] uppercase tracking-wider">
-                Dream Timeline
-              </label>
-              <span className="text-[13px] font-sans font-bold text-[#104d3b]">
-                {timelineMonths} Months
-              </span>
+            <div className="flex justify-between items-center mb-3">
+              <Label>Dream Timeline</Label>
+              <span className="text-[13px] font-sans font-bold text-[#104d3b]">{timelineMonths} Months</span>
             </div>
-            <input 
-              type="range" 
-              min="3" 
-              max="60" 
-              step="3"
-              value={timelineMonths}
-              onChange={(e) => setTimelineMonths(Number(e.target.value))}
-              className="w-full h-1.5 bg-[#ECE8E2] rounded-lg appearance-none cursor-pointer accent-[#104d3b]"
+            <Slider
+              min={3}
+              max={60}
+              step={3}
+              value={[timelineMonths]}
+              onValueChange={(vals) => setTimelineMonths(vals[0])}
             />
-            <div className="flex justify-between text-[10px] font-sans text-[#6f6f77] mt-1 select-none">
+            <div className="flex justify-between text-[10px] font-sans text-[#6f6f77] mt-2 select-none">
               <span>3 mos</span>
               <span>12 mos</span>
               <span>24 mos</span>
@@ -837,44 +785,33 @@ function AdjustPlanModal({ isOpen, onClose, currentIntensity, currentTimelineMon
             </div>
           </div>
 
+          {/* Description */}
           <div className="flex flex-col">
-            <label className="text-[12px] font-sans font-semibold text-[#6f6f77] mb-2 uppercase tracking-wider">
-              What changed in your life?
-            </label>
+            <Label className="mb-2">What changed in your life?</Label>
             <textarea
-              placeholder="E.g., 'I just got a new job with a longer commute. Make the plan slightly lighter for the next two weeks' or 'I want to focus more on visual assets instead of writing.'"
+              placeholder="E.g., 'I just got a new job with a longer commute. Make the plan slightly lighter for the next two weeks.'"
               rows={4}
               value={changeDescription}
               onChange={(e) => setChangeDescription(e.target.value)}
               className="w-full px-4 py-3 rounded-[12px] bg-[#ECE8E2] text-[#1a1a1a] text-[13.5px] font-sans border border-transparent outline-none focus:bg-white focus:border-black/10 focus:ring-1 focus:ring-black/10 transition-all shadow-inner placeholder-black/25 resize-none leading-relaxed"
             />
             <span className="text-[11px] font-sans text-[#6f6f77] mt-1.5 leading-relaxed">
-              ⚠️ Aven will preserve all your past completed cards intact and rewrite the remaining tasks to fit your updated parameters.
+              ⚠️ Aven will preserve all completed cards and rewrite remaining tasks to fit your updated parameters.
             </span>
           </div>
-
-          <div className="flex gap-3 pt-3">
-            <button 
-              type="button"
-              onClick={onClose}
-              className="flex-1 py-3 rounded-[12px] border border-black/15 hover:bg-black/5 active:scale-95 text-[#1a1a1a] text-[14px] font-sans font-medium transition-all shadow-sm"
-            >
-              Cancel
-            </button>
-            <button 
-              type="submit"
-              className="flex-1 py-3 rounded-[12px] bg-[#1a1a1a] hover:bg-[#333] active:scale-95 text-white text-[14px] font-sans font-medium transition-all shadow-sm"
-            >
-              Update Plan
-            </button>
-          </div>
         </form>
-      </div>
-    </div>
+
+        <DialogFooter className="p-8 pt-4">
+          <Button type="button" variant="outline" onClick={onClose} className="flex-1 py-6">Cancel</Button>
+          <Button type="submit" onClick={handleSubmit as any} className="flex-1 py-6">Update Plan</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
 // ─── Roadmap Overlay (Skill Tree) ─────────────────────────────────────────────
+
 interface RoadmapOverlayProps {
   isOpen: boolean;
   onClose: () => void;
@@ -1045,8 +982,6 @@ function ProfileModal({ isOpen, onClose, displayName, onSave, username, userId }
     }
   }, [isOpen, displayName, username, userId]);
 
-  if (!isOpen) return null;
-
   // Deriving initials reactively from display name input
   const initials = tempDisplayName
     .trim()
@@ -1092,18 +1027,12 @@ function ProfileModal({ isOpen, onClose, displayName, onSave, username, userId }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      {/* Backdrop */}
-      <div 
-        onClick={onClose}
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300 animate-in fade-in"
-      />
-      
-      {/* Modal Container */}
-      <div className="relative bg-[#F4F0EB] text-[#1a1a1a] rounded-[24px] overflow-hidden p-8 w-full max-w-[440px] shadow-2xl flex flex-col items-center justify-between z-10 animate-in fade-in zoom-in-95 duration-200">
-        <h3 className="w-full text-left font-sans font-medium text-[18px] text-[#1a1a1a] tracking-tight mb-6 select-none">
-          Edit profile
-        </h3>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-[440px] p-8 flex flex-col items-center">
+        <DialogHeader className="w-full p-0 pb-6 text-left">
+          <DialogTitle>Edit profile</DialogTitle>
+          <DialogDescription>Update your personal information and avatar.</DialogDescription>
+        </DialogHeader>
 
         {/* Avatar Area */}
         <div className="relative mb-6">
@@ -1141,9 +1070,7 @@ function ProfileModal({ isOpen, onClose, displayName, onSave, username, userId }
         {/* Inputs */}
         <div className="w-full flex flex-col gap-4.5 mb-6">
           <div className="flex flex-col text-left">
-            <label className="text-[12px] font-sans font-semibold text-[#6f6f77] mb-1.5 pl-1 select-none">
-              Display name
-            </label>
+            <Label className="mb-1.5 pl-1">Display name</Label>
             <input 
               type="text" 
               value={tempDisplayName}
@@ -1153,9 +1080,7 @@ function ProfileModal({ isOpen, onClose, displayName, onSave, username, userId }
           </div>
 
           <div className="flex flex-col text-left">
-            <label className="text-[12px] font-sans font-semibold text-[#6f6f77] mb-1.5 pl-1 select-none">
-              Username
-            </label>
+            <Label className="mb-1.5 pl-1">Username</Label>
             <input 
               type="text" 
               value={tempUsername}
@@ -1171,35 +1096,38 @@ function ProfileModal({ isOpen, onClose, displayName, onSave, username, userId }
         </p>
 
         {/* Logout Button */}
-        <button 
+        <Button 
+          variant="destructive"
           onClick={handleLogout}
-          className="w-full mb-8 py-3 rounded-[12px] border border-red-500/10 hover:bg-red-500/5 active:scale-[0.98] text-red-600 text-[14px] font-sans font-medium transition-all flex items-center justify-center gap-2 cursor-pointer"
+          className="w-full mb-8 py-3 h-auto"
         >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="mr-2 h-4 w-4">
             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
             <polyline points="16 17 21 12 16 7" />
             <line x1="21" y1="12" x2="9" y2="12" />
           </svg>
           Log out
-        </button>
+        </Button>
 
         {/* Action Buttons */}
         <div className="w-full flex gap-3">
-          <button 
+          <Button 
+            variant="outline" 
             onClick={onClose}
-            className="flex-1 py-3 rounded-[12px] border border-black/15 hover:bg-black/5 active:scale-95 text-[#1a1a1a] text-[14px] font-sans font-medium transition-all shadow-sm"
+            className="flex-1 py-3 h-auto"
           >
             Cancel
-          </button>
-          <button 
+          </Button>
+          <Button 
+            variant="default" 
             onClick={handleSave}
-            className="flex-1 py-3 rounded-[12px] bg-[#1a1a1a] hover:bg-[#333] active:scale-95 text-white text-[14px] font-sans font-medium transition-all shadow-sm"
+            className="flex-1 py-3 h-auto"
           >
             Save profile
-          </button>
+          </Button>
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -1240,72 +1168,32 @@ function SettingsModal({
     }
   }, [isOpen]);
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      {/* Backdrop */}
-      <div 
-        onClick={onClose}
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300 animate-in fade-in"
-      />
-      
-      {/* Split-pane Settings Container */}
-      <div className="relative bg-[#F4F0EB] text-[#1a1a1a] rounded-[24px] overflow-hidden flex w-full max-w-[760px] h-[520px] shadow-2xl z-10 animate-in fade-in zoom-in-95 duration-200">
-        
-        {/* Left Sidebar Pane */}
-        <div className="w-[192px] bg-[#ECE8E2] pt-6 pb-6 pl-6 pr-4 flex flex-col justify-between border-r border-black/5">
-          <div className="flex flex-col">
-            {/* Close X Button */}
-            <button 
-              onClick={onClose}
-              className="w-10 h-10 rounded-[12px] bg-[#FBFAFA] hover:bg-[#E3DDD4] flex items-center justify-center text-[#1a1a1a] transition-all hover:scale-105 active:scale-95 shadow-sm mb-8"
-              aria-label="Close settings"
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="18" y1="6" x2="6" y2="18"></line>
-                <line x1="6" y1="6" x2="18" y2="18"></line>
-              </svg>
-            </button>
-
-            {/* Menu Tabs */}
-            <div className="flex flex-col gap-2">
-              <button 
-                onClick={() => setActiveTab('general')}
-                className={`flex items-center gap-3 w-full px-4 py-3 rounded-[12px] font-sans font-medium text-[13.5px] select-none transition-colors ${
-                  activeTab === 'general'
-                    ? 'bg-[#1a1a1a] text-white shadow-sm'
-                    : 'text-[#1a1a1a]/60 hover:bg-black/5'
-                }`}
-              >
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="p-0 max-w-[760px] h-[520px] overflow-hidden flex flex-row">
+        <Tabs defaultValue="general" className="flex flex-row w-full h-full">
+          {/* Left Sidebar Pane */}
+          <div className="w-[192px] bg-[#ECE8E2] pt-20 pb-6 pl-6 pr-4 flex flex-col justify-between border-r border-black/5">
+            <TabsList className="bg-transparent border-0 p-0">
+              <TabsTrigger value="general">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                   <circle cx="12" cy="12" r="3"></circle>
                   <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
                 </svg>
                 General
-              </button>
-              
-              <button 
-                onClick={() => setActiveTab('privacy')}
-                className={`flex items-center gap-3 w-full px-4 py-3 rounded-[12px] font-sans font-medium text-[13.5px] select-none transition-colors ${
-                  activeTab === 'privacy'
-                    ? 'bg-[#1a1a1a] text-white shadow-sm'
-                    : 'text-[#1a1a1a]/60 hover:bg-black/5'
-                }`}
-              >
+              </TabsTrigger>
+              <TabsTrigger value="privacy">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
                 </svg>
                 Privacy
-              </button>
-            </div>
+              </TabsTrigger>
+            </TabsList>
           </div>
-        </div>
 
-        {/* Right Content Pane */}
-        <div className="flex-1 pt-6 pb-6 px-6 flex flex-col overflow-y-auto">
-          {activeTab === 'general' ? (
-            <>
+          {/* Right Content Pane */}
+          <div className="flex-1 pt-8 pb-6 px-8 flex flex-col overflow-y-auto">
+            <TabsContent value="general" className="flex flex-col h-full m-0 outline-none">
               <h4 className="font-sans font-medium text-[20px] text-[#1a1a1a] tracking-tight select-none mb-4 text-left">
                 General Settings
               </h4>
@@ -1391,9 +1279,9 @@ function SettingsModal({
                   )}
                 </div>
               </div>
-            </>
-          ) : (
-            <>
+            </TabsContent>
+
+            <TabsContent value="privacy" className="flex flex-col h-full m-0 outline-none">
               <h4 className="font-sans font-medium text-[20px] text-[#1a1a1a] tracking-tight select-none mb-4 text-left">
                 Privacy Settings
               </h4>
@@ -1438,37 +1326,39 @@ function SettingsModal({
                 </div>
 
                 <div className="pt-2 flex flex-col gap-3">
-                  <button 
+                  <Button 
+                    variant="outline"
                     onClick={onExportData}
-                    className="w-full py-3 rounded-[12px] bg-[#ECE8E2] hover:bg-[#E3DDD4] active:scale-[0.99] text-[#1a1a1a] text-[13px] font-sans font-medium transition-all flex items-center justify-center gap-2 border border-black/5 shadow-sm"
+                    className="w-full py-3 h-auto"
                   >
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="mr-2 h-4 w-4">
                       <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                       <polyline points="7 10 12 15 17 10"></polyline>
                       <line x1="12" y1="15" x2="12" y2="3"></line>
                     </svg>
                     Export my data (JSON)
-                  </button>
+                  </Button>
 
-                  <button 
+                  <Button 
+                    variant="destructive"
                     onClick={onResetAccount}
-                    className="w-full py-3 rounded-[12px] border border-red-500/20 hover:bg-red-500/5 active:scale-[0.99] text-red-600 text-[13px] font-sans font-medium transition-all flex items-center justify-center gap-2"
+                    className="w-full py-3 h-auto"
                   >
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="mr-2 h-4 w-4">
                       <polyline points="3 6 5 6 21 6"></polyline>
                       <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
                       <line x1="10" y1="11" x2="10" y2="17"></line>
                       <line x1="14" y1="11" x2="14" y2="17"></line>
                     </svg>
                     Reset my plan & history
-                  </button>
+                  </Button>
                 </div>
               </div>
-            </>
-          )}
-        </div>
-      </div>
-    </div>
+            </TabsContent>
+          </div>
+        </Tabs>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -1545,16 +1435,29 @@ export default function DashboardPage() {
           setProfilePhoto(savedPhoto);
         }
 
-        // 1. Fetch profile indicators
+        // Load cached name/username from localStorage immediately (fast render)
+        const cachedName = localStorage.getItem(`aven_display_name_${authUser.id}`);
+        const cachedUsername = localStorage.getItem(`aven_username_${authUser.id}`);
+        if (cachedName) setProfileName(cachedName);
+        if (cachedUsername) setProfileUsername(cachedUsername);
+
+        // 1. Fetch profile indicators from DB (authoritative source)
         const { data: userProfile } = await supabase
           .from('users')
           .select('*')
           .eq('id', authUser.id)
           .maybeSingle();
 
+        const dbName = userProfile?.display_name || authUser.user_metadata?.display_name || cachedName || userProfile?.email?.split('@')[0] || authUser.email?.split('@')[0] || 'You';
+        const dbUsername = userProfile?.username || authUser.user_metadata?.username || cachedUsername || '';
+        setProfileName(dbName);
+        setProfileUsername(dbUsername);
+        
+        // Keep localStorage in sync
+        localStorage.setItem(`aven_display_name_${authUser.id}`, dbName);
+        localStorage.setItem(`aven_username_${authUser.id}`, dbUsername);
+
         if (userProfile) {
-          setProfileName(userProfile.display_name || userProfile.email.split('@')[0] || 'Bright Mac');
-          setProfileUsername(userProfile.username || '');
           setTelegramConnected(!!userProfile.telegram_chat_id);
         }
 
@@ -1622,8 +1525,21 @@ export default function DashboardPage() {
     }
 
     if (user) {
+      // Always persist to localStorage first so refresh always restores the correct name
+      localStorage.setItem(`aven_display_name_${user.id}`, name);
+      localStorage.setItem(`aven_username_${user.id}`, username);
+
       const supabase = createClient();
       try {
+        // 1. Update auth metadata so it is guaranteed to persist in Supabase Auth DB
+        await supabase.auth.updateUser({
+          data: {
+            display_name: name,
+            username: username
+          }
+        });
+
+        // 2. Also try updating users table (will fail gracefully if columns don't exist)
         const { error } = await supabase
           .from('users')
           .update({
@@ -1631,7 +1547,9 @@ export default function DashboardPage() {
             username: username
           })
           .eq('id', user.id);
-        if (error) throw error;
+        if (error) {
+          console.error('[Save Profile DB Error]:', error);
+        }
       } catch (err) {
         console.error('[Save Profile Error]:', err);
       }
