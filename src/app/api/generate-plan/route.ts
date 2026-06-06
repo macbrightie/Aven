@@ -63,7 +63,8 @@ export async function POST(request: NextRequest) {
         user_id: user.id,
         plan_data: planData,
         primary_goal: planData.primary_goal,
-        timeline_years: planData.timeline_years,
+        timeline_months: planData.timeline_months,
+        timeline_years: Math.ceil((planData.timeline_months || 12) / 12),
         version: 1,
       })
       .select()

@@ -7,6 +7,8 @@
 alter table public.users add column if not exists profile_summary text;
 alter table public.users add column if not exists tone_preference text default 'warm';
 alter table public.users add column if not exists motivation_level text default 'medium';
+alter table public.users add column if not exists display_name text;
+alter table public.users add column if not exists username text;
 
 -- ============================================================
 -- TABLE: user_memories

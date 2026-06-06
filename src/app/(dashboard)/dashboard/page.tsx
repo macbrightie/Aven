@@ -368,7 +368,7 @@ const HABIT_DATA = [
   [0,1,0,0,0,0,0,0,0,0,0,0,0, 0,1,0,0,0,0,0,0,0,0,0,0,0, 0,1,0,0,0,0,0,0,0,0,0,0,0],
 ];
 
-function HabitGrid() {
+function HabitGrid({ dailyCards, filter, onFilterChange }: { dailyCards: any[]; filter: 'overall' | 'habit'; onFilterChange: (f: 'overall' | 'habit') => void }) {
   // Dynamically calculate proper calendar month names starting from current month
   const today = new Date();
   const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -396,7 +396,7 @@ function HabitGrid() {
   ];
 
   return (
-    <div className="bg-[#1a1a1a] rounded-[20px] px-6 pb-[24px] pt-[32px] flex flex-col gap-6 h-[520px] justify-between">
+    <div className="bg-[#1a1a1a] rounded-[20px] px-6 pb-[24px] pt-[32px] flex flex-col gap-6 h-[520px] justify-between text-left">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
         <div>
@@ -405,9 +405,16 @@ function HabitGrid() {
             See and track how much work you have put in, and how much this dream means to you
           </p>
         </div>
-        <button className="px-4 py-2 rounded-[8px] bg-white/10 text-white text-[12px] font-sans border border-white/10 hover:bg-white/15 transition-colors flex-shrink-0 self-start md:self-auto">
-          Filter
-        </button>
+        <div className="relative self-start md:self-auto flex-shrink-0">
+          <select 
+            value={filter}
+            onChange={(e) => onFilterChange(e.target.value as 'overall' | 'habit')}
+            className="px-4 py-2 rounded-[8px] bg-white/10 text-white text-[12.5px] font-sans border border-white/10 hover:bg-white/15 outline-none cursor-pointer"
+          >
+            <option value="overall" className="bg-[#1a1a1a] text-white">Overall Progress</option>
+            <option value="habit" className="bg-[#1a1a1a] text-white">Specific Habits</option>
+          </select>
+        </div>
       </div>
 
       {/* Grid container spanning full width with scroll capability */}
@@ -432,13 +439,27 @@ function HabitGrid() {
             {DAYS.map((day, di) => (
               <div key={day} className="flex gap-[6px]">
                 {Array.from({ length: 52 }).map((_, ci) => {
-                  const active = HABIT_DATA[di]?.[ci % 13] === 1;
+                  const dayNum = ci * 7 + di + 1;
+                  
+                  let active = false;
+                  if (filter === 'overall') {
+                    active = dayNum <= 21 && dailyCards.find((c) => c.day_number === dayNum)?.status === 'done';
+                  } else {
+                    // Specific habit mock layout (e.g. daily code, writing, meditation task)
+                    active = dayNum <= 21 && (dayNum % 3 !== 0);
+                  }
+
                   return (
                     <div
                       key={ci}
-                      className="w-[32px] h-[32px] rounded-[6px] flex-shrink-0 transition-colors"
+                      className={`w-[32px] h-[32px] rounded-[6px] flex-shrink-0 transition-colors ${
+                        dayNum <= 21 ? 'cursor-pointer hover:ring-1 hover:ring-white/20' : ''
+                      }`}
+                      title={dayNum <= 21 ? `Day ${dayNum} Move` : undefined}
                       style={{
-                        background: active ? '#1559EF' : 'rgba(255,255,255,0.08)'
+                        background: active 
+                          ? (filter === 'overall' ? '#1559EF' : '#104D3B') 
+                          : (dayNum <= 21 ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.04)')
                       }}
                     />
                   );
@@ -469,10 +490,11 @@ function HabitGrid() {
 }
 
 // ─── Map Banner ───────────────────────────────────────────────────────────────
-function MapBanner() {
+function MapBanner({ onClick }: { onClick: () => void }) {
   return (
     <div
-      className="rounded-[16px] overflow-hidden relative flex items-center justify-center"
+      onClick={onClick}
+      className="rounded-[16px] overflow-hidden relative flex items-center justify-center cursor-pointer hover:opacity-95 transition-opacity"
       style={{ minHeight: 180 }}
     >
       <Image
@@ -483,7 +505,7 @@ function MapBanner() {
       />
       <div className="absolute inset-0 bg-black/25" />
       <div className="relative z-10 w-full h-full flex items-center justify-center px-6 text-center py-4">
-        <div className="flex items-center gap-2 hover:opacity-90 transition-opacity cursor-pointer">
+        <div className="flex items-center gap-2 hover:opacity-90 transition-opacity">
           <span className="text-white text-[14px] font-sans font-medium leading-snug">
             See how this 21 days maps into your next 5 years
           </span>
@@ -511,6 +533,487 @@ function StatCard({ value, unit, label, accent }: { value: string; unit?: string
       <p className={`text-[16px] font-sans leading-[1.3] max-w-[120px] whitespace-pre-line ${accent ? 'text-white' : 'text-black'}`}>
         {label}
       </p>
+    </div>
+  );
+}
+
+// ─── Update Goals Drawer ──────────────────────────────────────────────────────
+interface UpdateGoalsDrawerProps {
+  isOpen: boolean;
+  onClose: () => void;
+  supportingGoals: string[];
+  primaryGoal: string;
+  onSaveGoals: (primary: string, supporting: string[]) => Promise<void>;
+}
+
+function UpdateGoalsDrawer({ isOpen, onClose, supportingGoals, primaryGoal, onSaveGoals }: UpdateGoalsDrawerProps) {
+  const [tempPrimary, setTempPrimary] = useState(primaryGoal);
+  const [tempSupporting, setTempSupporting] = useState<string[]>(supportingGoals || []);
+  const [newGoalText, setNewGoalText] = useState('');
+  const [completedGoals, setCompletedGoals] = useState<string[]>([]);
+  const [showConfetti, setShowConfetti] = useState(false);
+
+  useEffect(() => {
+    setTempPrimary(primaryGoal);
+    setTempSupporting(supportingGoals || []);
+  }, [isOpen, primaryGoal, supportingGoals]);
+
+  if (!isOpen) return null;
+
+  const handleAddGoal = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newGoalText.trim()) return;
+    setTempSupporting([...tempSupporting, newGoalText.trim()]);
+    setNewGoalText('');
+  };
+
+  const handleRemoveGoal = (index: number) => {
+    setTempSupporting(tempSupporting.filter((_, i) => i !== index));
+  };
+
+  const toggleGoalCompleted = (goal: string) => {
+    if (completedGoals.includes(goal)) {
+      setCompletedGoals(completedGoals.filter(g => g !== goal));
+    } else {
+      setCompletedGoals([...completedGoals, goal]);
+      setShowConfetti(true);
+      setTimeout(() => setShowConfetti(false), 2000);
+    }
+  };
+
+  const handleSave = () => {
+    onSaveGoals(tempPrimary, tempSupporting);
+    onClose();
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex justify-end">
+      <div 
+        onClick={onClose}
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300 animate-in fade-in"
+      />
+      <div className="relative w-full max-w-[460px] h-full bg-[#F4F0EB] text-[#1a1a1a] shadow-2xl p-8 flex flex-col justify-between z-10 animate-in slide-in-from-right duration-300">
+        {showConfetti && (
+          <div className="absolute inset-0 pointer-events-none flex items-center justify-center overflow-hidden z-50">
+            <div className="text-[40px] animate-ping">🎉✨💥</div>
+          </div>
+        )}
+
+        <div className="flex-1 flex flex-col overflow-y-auto">
+          <div className="flex justify-between items-center mb-8">
+            <h3 className="font-sans font-medium text-[20px] text-[#1a1a1a] tracking-tight select-none">
+              Your Goals
+            </h3>
+            <button 
+              onClick={onClose}
+              className="w-10 h-10 rounded-[12px] bg-[#ECE8E2] hover:bg-[#E3DDD4] flex items-center justify-center text-[#1a1a1a] transition-all hover:scale-105 active:scale-95 shadow-sm"
+              aria-label="Close goals"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
+          </div>
+
+          <div className="mb-6 flex flex-col text-left">
+            <label className="text-[12px] font-sans font-semibold text-[#6f6f77] mb-2 select-none uppercase tracking-wider">
+              Primary Goal
+            </label>
+            <input 
+              type="text" 
+              value={tempPrimary}
+              onChange={(e) => setTempPrimary(e.target.value)}
+              className="w-full px-4 py-3 rounded-[12px] bg-[#ECE8E2] border border-transparent focus:border-black/10 focus:bg-[#FBFAFA] text-[#1a1a1a] text-[14px] font-sans outline-none transition-all shadow-inner"
+            />
+          </div>
+
+          <div className="mb-6 flex flex-col text-left flex-1">
+            <label className="text-[12px] font-sans font-semibold text-[#6f6f77] mb-3 select-none uppercase tracking-wider">
+              Supporting Goals Checklist
+            </label>
+            <div className="flex-1 overflow-y-auto space-y-3 pr-2" style={{ maxHeight: '240px' }}>
+              {tempSupporting.map((goal, index) => {
+                const isCompleted = completedGoals.includes(goal);
+                return (
+                  <div 
+                    key={index}
+                    className="flex items-center justify-between p-3.5 rounded-[12px] bg-[#ECE8E2] border border-black/5 hover:bg-[#E3DDD4] transition-colors"
+                  >
+                    <div 
+                      onClick={() => toggleGoalCompleted(goal)}
+                      className="flex items-center gap-3 cursor-pointer flex-1"
+                    >
+                      <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 border border-black/20 bg-white">
+                        {isCompleted && (
+                          <div className="w-3 h-3 rounded-full bg-[#104d3b]" />
+                        )}
+                      </div>
+                      <span className={`text-[13.5px] font-sans text-left transition-all duration-300 ${isCompleted ? 'text-black/45 line-through' : 'text-black'}`}>
+                        {goal}
+                      </span>
+                    </div>
+                    
+                    <button 
+                      onClick={() => handleRemoveGoal(index)}
+                      className="text-red-500 hover:text-red-700 opacity-60 hover:opacity-100 p-1"
+                      title="Delete Goal"
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                      </svg>
+                    </button>
+                  </div>
+                );
+              })}
+
+              {tempSupporting.length === 0 && (
+                <p className="text-[13px] font-sans text-black/45 text-center mt-6">
+                  No supporting goals added yet. Add one below!
+                </p>
+              )}
+            </div>
+          </div>
+
+          <form onSubmit={handleAddGoal} className="flex gap-2.5 mb-6">
+            <input 
+              type="text"
+              placeholder="Add a supporting goal..."
+              value={newGoalText}
+              onChange={(e) => setNewGoalText(e.target.value)}
+              className="flex-1 px-4 py-3 rounded-[12px] bg-[#ECE8E2] text-[#1a1a1a] text-[13.5px] font-sans border border-transparent outline-none focus:bg-white focus:border-black/10 transition-all shadow-inner placeholder-black/25"
+            />
+            <button 
+              type="submit"
+              className="px-4 py-3 rounded-[12px] bg-[#1a1a1a] text-white hover:bg-[#333] font-sans font-medium text-[13px] transition-colors"
+            >
+              Add
+            </button>
+          </form>
+        </div>
+
+        <div className="flex gap-3">
+          <button 
+            onClick={onClose}
+            className="flex-1 py-3 rounded-[12px] border border-black/15 hover:bg-black/5 active:scale-95 text-[#1a1a1a] text-[14px] font-sans font-medium transition-all shadow-sm"
+          >
+            Cancel
+          </button>
+          <button 
+            onClick={handleSave}
+            className="flex-1 py-3 rounded-[12px] bg-[#104d3b] hover:bg-[#0d3f30] active:scale-95 text-white text-[14px] font-sans font-medium transition-all shadow-sm"
+          >
+            Save Goals
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Adjust Plan Modal ────────────────────────────────────────────────────────
+interface AdjustPlanModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  currentIntensity: string;
+  currentTimelineMonths: number;
+  onAdjustPlan: (intensity: string, months: number, description: string) => Promise<void>;
+}
+
+function AdjustPlanModal({ isOpen, onClose, currentIntensity, currentTimelineMonths, onAdjustPlan }: AdjustPlanModalProps) {
+  const [intensity, setIntensity] = useState(currentIntensity || 'steady');
+  const [timelineMonths, setTimelineMonths] = useState(currentTimelineMonths || 12);
+  const [changeDescription, setChangeDescription] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    setIntensity(currentIntensity || 'steady');
+    setTimelineMonths(currentTimelineMonths || 12);
+  }, [isOpen, currentIntensity, currentTimelineMonths]);
+
+  if (!isOpen) return null;
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!changeDescription.trim()) {
+      alert("Please tell us what has changed in your life so Aven can adjust your plan.");
+      return;
+    }
+    setLoading(true);
+    try {
+      await onAdjustPlan(intensity, timelineMonths, changeDescription);
+      onClose();
+    } catch (err) {
+      console.error('[Adjust Plan Modal Error]:', err);
+      alert("There was an error updating your plan. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div 
+        onClick={onClose}
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300 animate-in fade-in"
+      />
+      
+      <div className="relative bg-[#F4F0EB] text-[#1a1a1a] rounded-[24px] overflow-hidden p-8 w-full max-w-[500px] shadow-2xl flex flex-col justify-between z-10 animate-in fade-in zoom-in-95 duration-200">
+        {loading && (
+          <div className="absolute inset-0 bg-[#F4F0EB]/80 backdrop-blur-sm flex flex-col items-center justify-center z-50">
+            <svg className="animate-spin w-8 h-8 text-[#104d3b] mb-3" viewBox="0 0 24 24" fill="none">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+            </svg>
+            <span className="text-[14px] font-sans font-medium text-black tracking-wide">Aven is rewriting your plan...</span>
+          </div>
+        )}
+
+        <div className="flex justify-between items-center mb-6">
+          <h3 className="font-sans font-medium text-[20px] text-[#1a1a1a] tracking-tight select-none">
+            Adjust Overall Plan
+          </h3>
+          <button 
+            type="button"
+            onClick={onClose}
+            className="w-10 h-10 rounded-[12px] bg-[#ECE8E2] hover:bg-[#E3DDD4] flex items-center justify-center text-[#1a1a1a] transition-all hover:scale-105 active:scale-95 shadow-sm"
+            aria-label="Close dialog"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-5 text-left">
+          <div className="flex flex-col">
+            <label className="text-[12px] font-sans font-semibold text-[#6f6f77] mb-2 uppercase tracking-wider">
+              Sprint Intensity
+            </label>
+            <div className="grid grid-cols-3 gap-2 bg-[#ECE8E2] rounded-[10px] p-1">
+              {(['steady', 'serious', 'all-in'] as const).map((mode) => (
+                <button
+                  key={mode}
+                  type="button"
+                  onClick={() => setIntensity(mode)}
+                  className={`py-2 text-[12.5px] font-sans font-medium transition-all rounded-[7px] capitalize ${
+                    intensity === mode
+                      ? 'bg-[#1a1a1a] text-white shadow-sm'
+                      : 'text-black/60 hover:text-black/80'
+                  }`}
+                >
+                  {mode}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex flex-col">
+            <div className="flex justify-between items-center mb-1">
+              <label className="text-[12px] font-sans font-semibold text-[#6f6f77] uppercase tracking-wider">
+                Dream Timeline
+              </label>
+              <span className="text-[13px] font-sans font-bold text-[#104d3b]">
+                {timelineMonths} Months
+              </span>
+            </div>
+            <input 
+              type="range" 
+              min="3" 
+              max="60" 
+              step="3"
+              value={timelineMonths}
+              onChange={(e) => setTimelineMonths(Number(e.target.value))}
+              className="w-full h-1.5 bg-[#ECE8E2] rounded-lg appearance-none cursor-pointer accent-[#104d3b]"
+            />
+            <div className="flex justify-between text-[10px] font-sans text-[#6f6f77] mt-1 select-none">
+              <span>3 mos</span>
+              <span>12 mos</span>
+              <span>24 mos</span>
+              <span>36 mos</span>
+              <span>60 mos</span>
+            </div>
+          </div>
+
+          <div className="flex flex-col">
+            <label className="text-[12px] font-sans font-semibold text-[#6f6f77] mb-2 uppercase tracking-wider">
+              What changed in your life?
+            </label>
+            <textarea
+              placeholder="E.g., 'I just got a new job with a longer commute. Make the plan slightly lighter for the next two weeks' or 'I want to focus more on visual assets instead of writing.'"
+              rows={4}
+              value={changeDescription}
+              onChange={(e) => setChangeDescription(e.target.value)}
+              className="w-full px-4 py-3 rounded-[12px] bg-[#ECE8E2] text-[#1a1a1a] text-[13.5px] font-sans border border-transparent outline-none focus:bg-white focus:border-black/10 focus:ring-1 focus:ring-black/10 transition-all shadow-inner placeholder-black/25 resize-none leading-relaxed"
+            />
+            <span className="text-[11px] font-sans text-[#6f6f77] mt-1.5 leading-relaxed">
+              ⚠️ Aven will preserve all your past completed cards intact and rewrite the remaining tasks to fit your updated parameters.
+            </span>
+          </div>
+
+          <div className="flex gap-3 pt-3">
+            <button 
+              type="button"
+              onClick={onClose}
+              className="flex-1 py-3 rounded-[12px] border border-black/15 hover:bg-black/5 active:scale-95 text-[#1a1a1a] text-[14px] font-sans font-medium transition-all shadow-sm"
+            >
+              Cancel
+            </button>
+            <button 
+              type="submit"
+              className="flex-1 py-3 rounded-[12px] bg-[#1a1a1a] hover:bg-[#333] active:scale-95 text-white text-[14px] font-sans font-medium transition-all shadow-sm"
+            >
+              Update Plan
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// ─── Roadmap Overlay (Skill Tree) ─────────────────────────────────────────────
+interface RoadmapOverlayProps {
+  isOpen: boolean;
+  onClose: () => void;
+  plan: any;
+  dailyCards: any[];
+}
+
+function RoadmapOverlay({ isOpen, onClose, plan, dailyCards }: RoadmapOverlayProps) {
+  const [hoverNode, setHoverNode] = useState<number | null>(null);
+
+  if (!isOpen) return null;
+
+  const milestones = plan?.plan_data?.milestones || [];
+  
+  const phases = [
+    {
+      id: 1,
+      title: "Current Sprint",
+      period: "0 - 21 Days",
+      key_focus: plan?.plan_data?.sprint_theme || "Foundation Build",
+      description: plan?.plan_data?.summary || "Establishing base routines and launching initial elements.",
+      small_win: "Complete 21 moves checklists successfully."
+    },
+    {
+      id: 2,
+      title: milestones[1]?.title || "Building Block",
+      period: milestones[1]?.period || "1 - 3 Months",
+      key_focus: milestones[1]?.key_focus || "Consistent Routine Scaling",
+      description: milestones[1]?.description || "Solidifying the daily habits formed and expanding skills.",
+      small_win: milestones[1]?.small_win || "Complete your first monthly milestone win."
+    },
+    {
+      id: 3,
+      title: milestones[2]?.title || "Momentum Period",
+      period: milestones[2]?.period || "6 - 12 Months",
+      key_focus: milestones[2]?.key_focus || "Product-Market Fit & Scale",
+      description: milestones[2]?.description || "Widening reach and implementing standard growth systems.",
+      small_win: milestones[2]?.small_win || "Reaching mid-stage audience size or sales goal."
+    },
+    {
+      id: 4,
+      title: milestones[3]?.title || "Dream Realisation",
+      period: milestones[3]?.period || "13 - 36+ Months",
+      key_focus: milestones[3]?.key_focus || "Full Independence",
+      description: milestones[3]?.description || "Your vision node fully realized as a daily standard.",
+      small_win: milestones[3]?.small_win || "Complete life transitions to your ultimate goal."
+    }
+  ];
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#131316]/95 backdrop-blur-md text-white">
+      <div className="absolute top-6 left-6 md:left-8 right-6 md:right-8 flex justify-between items-center z-10 select-none">
+        <div className="flex items-center gap-2">
+          <div className="w-5 h-5 rounded-full bg-[#104d3b] flex items-center justify-center">
+            <div className="w-2 h-2 rounded-full bg-white" />
+          </div>
+          <span className="font-sans text-[15px] font-medium tracking-tight text-white/90">aven roadmap</span>
+        </div>
+        <button 
+          onClick={onClose}
+          className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-all hover:scale-105 active:scale-95 shadow-sm"
+          title="Back to Dashboard"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+
+      <div className="w-full max-w-4xl px-4 flex flex-col justify-center items-center h-full mt-12 relative overflow-y-auto">
+        <h2 className="text-[28px] md:text-[36px] font-serif font-light text-center mb-2 tracking-tight">
+          Interactive Skill Tree
+        </h2>
+        <p className="text-[13px] md:text-[14px] font-sans text-white/60 text-center max-w-md mb-12 leading-relaxed">
+          Hover or click on the milestone nodes to inspect how your current sprint shapes your multi-month roadmap.
+        </p>
+
+        <div className="relative flex flex-col md:flex-row items-center justify-between w-full max-w-[800px] gap-8 md:gap-4 py-8">
+          <div className="absolute top-[50%] left-0 right-0 h-0.5 bg-white/10 hidden md:block z-0" />
+          <div className="absolute top-0 bottom-0 left-[50%] w-0.5 bg-white/10 block md:hidden z-0" />
+
+          {phases.map((phase) => {
+            const isHovered = hoverNode === phase.id;
+            return (
+              <div 
+                key={phase.id}
+                className="relative z-10 flex flex-col items-center select-none cursor-pointer"
+                onMouseEnter={() => setHoverNode(phase.id)}
+                onMouseLeave={() => setHoverNode(null)}
+                onClick={() => setHoverNode(phase.id)}
+              >
+                <div 
+                  className={`w-14 h-14 rounded-full flex items-center justify-center border-2 transition-all duration-300 ${
+                    isHovered 
+                      ? 'border-[#1559EF] bg-[#1559EF] shadow-[0_0_20px_rgba(21,89,239,0.5)] scale-110' 
+                      : 'border-white/20 bg-[#1e1e24] hover:border-white/60'
+                  }`}
+                >
+                  <span className="text-[14px] font-sans font-bold text-white">{phase.id}</span>
+                </div>
+
+                <h4 className="text-[13px] font-sans font-bold text-white mt-3 tracking-wide">{phase.title}</h4>
+                <span className="text-[10px] font-sans text-white/45 uppercase tracking-widest mt-0.5">{phase.period}</span>
+
+                <div 
+                  className={`absolute bottom-[75px] md:bottom-[85px] w-[260px] md:w-[280px] p-5 rounded-[16px] bg-[#1E1E22] border border-white/10 shadow-2xl text-left transition-all duration-300 pointer-events-none flex flex-col gap-2.5 z-50 ${
+                    isHovered 
+                      ? 'opacity-100 translate-y-0 scale-100 visible' 
+                      : 'opacity-0 translate-y-2 scale-95 invisible'
+                  }`}
+                >
+                  <div>
+                    <span className="text-[9px] font-sans text-[#1559EF] uppercase tracking-widest font-bold">
+                      Phase {phase.id}
+                    </span>
+                    <h5 className="text-[15px] font-sans font-bold text-white leading-tight mt-0.5">
+                      {phase.key_focus}
+                    </h5>
+                  </div>
+                  
+                  <p className="text-[11.5px] font-sans text-white/70 leading-relaxed">
+                    {phase.description}
+                  </p>
+
+                  <div className="border-t border-white/5 pt-2 flex flex-col gap-1">
+                    <span className="text-[9px] font-sans text-white/35 uppercase tracking-widest font-bold">
+                      Small Win Goal
+                    </span>
+                    <p className="text-[11.5px] font-sans text-[#3CD070] font-medium leading-tight">
+                      ✓ {phase.small_win}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
     </div>
   );
 }
@@ -710,6 +1213,8 @@ interface SettingsModalProps {
   onToggleWhatsApp: () => void;
   activeLanguage: string;
   onChangeLanguage: (lang: string) => void;
+  onExportData: () => Promise<void>;
+  onResetAccount: () => Promise<void>;
 }
 
 function SettingsModal({
@@ -721,8 +1226,19 @@ function SettingsModal({
   onToggleWhatsApp,
   activeLanguage,
   onChangeLanguage,
+  onExportData,
+  onResetAccount
 }: SettingsModalProps) {
+  const [activeTab, setActiveTab] = useState<'general' | 'privacy'>('general');
   const [langDropdownOpen, setLangDropdownOpen] = useState(false);
+  const [publicProfile, setPublicProfile] = useState(true);
+  const [shareData, setShareData] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      setActiveTab('general');
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -738,123 +1254,225 @@ function SettingsModal({
       <div className="relative bg-[#F4F0EB] text-[#1a1a1a] rounded-[24px] overflow-hidden flex w-full max-w-[760px] h-[520px] shadow-2xl z-10 animate-in fade-in zoom-in-95 duration-200">
         
         {/* Left Sidebar Pane */}
-        <div className="w-[192px] bg-[#F4F0EB] pt-6 pb-6 pl-6 pr-[4px] flex flex-col">
-          {/* Close X Button */}
-          <button 
-            onClick={onClose}
-            className="w-10 h-10 rounded-[12px] bg-[#ECE8E2] hover:bg-[#E3DDD4] flex items-center justify-center text-[#1a1a1a] transition-all hover:scale-105 active:scale-95 shadow-sm mb-8"
-            aria-label="Close settings"
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="18" y1="6" x2="6" y2="18"></line>
-              <line x1="6" y1="6" x2="18" y2="18"></line>
-            </svg>
-          </button>
-
-          {/* Menu Tab */}
-          <div className="flex flex-col gap-2">
-            <button className="flex items-center gap-3 w-full px-4 py-3 rounded-[12px] bg-[#FBFAFA] text-[#1a1a1a] font-sans font-medium text-[14px] shadow-sm select-none transition-colors">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="3"></circle>
-                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+        <div className="w-[192px] bg-[#ECE8E2] pt-6 pb-6 pl-6 pr-4 flex flex-col justify-between border-r border-black/5">
+          <div className="flex flex-col">
+            {/* Close X Button */}
+            <button 
+              onClick={onClose}
+              className="w-10 h-10 rounded-[12px] bg-[#FBFAFA] hover:bg-[#E3DDD4] flex items-center justify-center text-[#1a1a1a] transition-all hover:scale-105 active:scale-95 shadow-sm mb-8"
+              aria-label="Close settings"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
               </svg>
-              General
             </button>
+
+            {/* Menu Tabs */}
+            <div className="flex flex-col gap-2">
+              <button 
+                onClick={() => setActiveTab('general')}
+                className={`flex items-center gap-3 w-full px-4 py-3 rounded-[12px] font-sans font-medium text-[13.5px] select-none transition-colors ${
+                  activeTab === 'general'
+                    ? 'bg-[#1a1a1a] text-white shadow-sm'
+                    : 'text-[#1a1a1a]/60 hover:bg-black/5'
+                }`}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="3"></circle>
+                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                </svg>
+                General
+              </button>
+              
+              <button 
+                onClick={() => setActiveTab('privacy')}
+                className={`flex items-center gap-3 w-full px-4 py-3 rounded-[12px] font-sans font-medium text-[13.5px] select-none transition-colors ${
+                  activeTab === 'privacy'
+                    ? 'bg-[#1a1a1a] text-white shadow-sm'
+                    : 'text-[#1a1a1a]/60 hover:bg-black/5'
+                }`}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                </svg>
+                Privacy
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* Right Main Settings Pane */}
-        <div className="flex-1 pt-6 pb-6 pl-4 pr-4 flex flex-col">
-          <h4 className="font-sans font-medium text-[20px] text-[#1a1a1a] tracking-tight select-none mb-5">
-            General
-          </h4>
+        {/* Right Content Pane */}
+        <div className="flex-1 pt-6 pb-6 px-6 flex flex-col overflow-y-auto">
+          {activeTab === 'general' ? (
+            <>
+              <h4 className="font-sans font-medium text-[20px] text-[#1a1a1a] tracking-tight select-none mb-4 text-left">
+                General Settings
+              </h4>
 
-            {/* Telegram Bar */}
-            <div 
-              onClick={onToggleTelegram}
-              className="mt-6 flex items-center justify-between bg-[#1E1E22] hover:bg-[#2A2A2E] text-white pt-[26px] pb-[26px] px-[16px] rounded-[16px] cursor-pointer transition-all duration-200 hover:scale-[1.01] active:scale-[0.99] shadow-sm select-none"
-            >
-              <div className="flex items-center gap-3.5 pl-1">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="flex-shrink-0 shadow-sm">
-                  <path d="M12 1C9.08328 1 6.28344 2.15964 4.22266 4.2218C2.15975 6.28477 1.00057 9.08256 1 12C1 14.9162 2.16016 17.716 4.22266 19.7782C6.28344 21.8404 9.08328 23 12 23C14.9167 23 17.7166 21.8404 19.7773 19.7782C21.8398 17.716 23 14.9162 23 12C23 9.0838 21.8398 6.28395 19.7773 4.2218C17.7166 2.15964 14.9167 1 12 1Z" fill="url(#paint0_linear_735_1460)"/>
-                  <path d="M5.97927 11.8831C9.18646 10.4861 11.3246 9.56498 12.3936 9.11999C15.4496 7.84932 16.0838 7.62864 16.498 7.62116C16.5891 7.6197 16.7919 7.64221 16.9243 7.74921C17.0343 7.83944 17.0652 7.96147 17.0807 8.04715C17.0944 8.13274 17.1133 8.32782 17.0979 8.4801C16.9329 10.2195 16.2161 14.4404 15.8518 16.3886C15.6988 17.2129 15.3946 17.4893 15.1007 17.5163C14.4613 17.575 13.9766 17.0941 13.3579 16.6887C12.3902 16.0539 11.8436 15.659 10.9035 15.0397C9.81724 14.324 10.5219 13.9306 11.1407 13.2878C11.3022 13.1195 14.1176 10.5594 14.1708 10.3272C14.1777 10.2982 14.1846 10.1899 14.1193 10.1329C14.0557 10.0756 13.9611 10.0952 13.8924 10.1107C13.7944 10.1327 12.2493 11.155 9.25177 13.1774C8.81349 13.4789 8.41646 13.6259 8.05896 13.6181C7.66708 13.6097 6.91083 13.3961 6.3488 13.2135C5.6613 12.9896 5.11302 12.8712 5.16115 12.4908C5.18521 12.2928 5.45849 12.0902 5.97927 11.8831Z" fill="white"/>
-                  <defs>
-                    <linearGradient id="paint0_linear_735_1460" x1="1101" y1="1" x2="1101" y2="2201" gradientUnits="userSpaceOnUse">
-                      <stop stop-color="#2AABEE"/>
-                      <stop offset="1" stop-color="#229ED9"/>
-                    </linearGradient>
-                  </defs>
-                </svg>
-                <span className="font-sans font-medium text-[16px]">Connect telegram</span>
-              </div>
-              <div className="pr-1">
-                {telegramConnected && (
-                  <div className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-white/10 border border-white/15 text-white text-[12px] font-sans font-medium animate-in fade-in zoom-in-95 duration-200">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#104d3b] shadow-glow" />
-                    Connected
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* WhatsApp Bar */}
-            <div 
-              onClick={onToggleWhatsApp}
-              className="mt-4 flex items-center justify-between bg-[#1E1E22] hover:bg-[#2A2A2E] text-white pt-[26px] pb-[26px] px-[16px] rounded-[16px] cursor-pointer transition-all duration-200 hover:scale-[1.01] active:scale-[0.99] shadow-sm select-none"
-            >
-              <div className="flex items-center gap-3.5 pl-1">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="flex-shrink-0 shadow-sm">
-                  <path d="M12.002 2C17.5248 2 22.002 6.47715 22.002 12C22.002 17.5228 17.5248 22 12.002 22C10.1681 22 8.44948 21.5064 6.97183 20.6447L2.00613 22L3.35809 17.0315C2.49591 15.5536 2.00195 13.8345 2.00195 12C2.00195 6.47715 6.4791 2 12.002 2ZM8.39329 7.30833C8.2639 7.31742 8.13704 7.34902 8.02154 7.40811C7.93489 7.45244 7.85445 7.51651 7.72806 7.63586C7.60871 7.74855 7.53954 7.84697 7.46666 7.94186C7.09696 8.4232 6.89826 9.01405 6.90195 9.62098C6.90396 10.1116 7.0314 10.5884 7.23266 11.0336C7.64079 11.9364 8.31385 12.8908 9.20291 13.7759C9.41647 13.9885 9.6257 14.2034 9.85131 14.402C10.9548 15.3736 12.2698 16.0742 13.6917 16.4482C13.6917 16.4482 14.2517 16.5342 14.2599 16.5347C14.4454 16.5447 14.6306 16.5313 14.8163 16.5218C15.1076 16.5068 15.392 16.428 15.6494 16.2909C15.8149 16.2028 15.8932 16.159 16.0321 16.0714C16.0321 16.0714 16.0747 16.0426 16.1569 15.9814C16.2919 15.8808 16.3753 15.81 16.4876 15.6934C16.5704 15.6074 16.6416 15.5058 16.6966 15.3913C16.7748 15.2281 16.8535 14.9166 16.8848 14.6579C16.9087 14.4603 16.9015 14.3523 16.8989 14.2854C16.8946 14.1778 16.8057 14.0671 16.7083 14.0201L16.1268 13.7587C16.1268 13.7587 15.2573 13.3803 14.7255 13.1377C14.6701 13.1124 14.6095 13.1007 14.5486 13.097C14.4152 13.0888 14.2657 13.1236 14.1706 13.2238C14.1656 13.2218 14.0994 13.279 13.3759 14.1555C13.336 14.2032 13.2425 14.3069 13.0808 14.2972C13.0564 14.2955 13.0321 14.292 13.0084 14.2858C12.9429 14.2685 12.8791 14.2457 12.8167 14.2193C12.693 14.1668 12.6496 14.1469 12.5651 14.1105C11.9878 13.8583 11.458 13.5209 10.9897 13.108C10.8641 12.9974 10.7473 12.8783 10.6269 12.7616C10.2067 12.3543 9.86266 11.9211 9.60674 11.4938C9.59277 11.4705 9.57124 11.4368 9.54805 11.3991C9.50618 11.331 9.46 11.25 9.44552 11.1944C9.40835 11.0473 9.50696 10.9291 9.50696 10.9291C9.50696 10.9291 9.75036 10.663 9.86345 10.5183C9.97225 10.379 10.0662 10.2428 10.126 10.1457C10.2438 9.95633 10.2811 9.76062 10.2192 9.60963C9.93861 8.92565 9.64915 8.24536 9.35083 7.56894C9.29195 7.43545 9.11682 7.33846 8.95756 7.32007C8.90362 7.31384 8.84972 7.30758 8.79556 7.30402C8.6615 7.29748 8.52717 7.29892 8.39329 7.30833Z" fill="white"/>
-                </svg>
-                <span className="font-sans font-medium text-[16px]">Connect whatsapp</span>
-              </div>
-              <div className="pr-1">
-                {whatsappConnected && (
-                  <div className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-white/10 border border-white/15 text-white text-[12px] font-sans font-medium animate-in fade-in zoom-in-95 duration-200">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#104d3b] shadow-glow" />
-                    Connected
-                  </div>
-                )}
-              </div>
-            </div>
-
-          {/* Language Selection Row */}
-          <div className="flex items-center justify-between relative mt-6 select-none">
-            <span className="font-sans font-medium text-[15px] text-[#1a1a1a]">Language</span>
-            <div className="relative">
-              <button 
-                onClick={() => setLangDropdownOpen(!langDropdownOpen)}
-                className="flex items-center gap-2 px-4 py-2 rounded-[12px] bg-[#ECE8E2] hover:bg-[#E3DDD4] text-[#1a1a1a] text-[14px] font-sans transition-all duration-200 shadow-sm"
+              {/* Telegram Bar */}
+              <div 
+                onClick={onToggleTelegram}
+                className="mt-2 flex items-center justify-between bg-[#1E1E22] hover:bg-[#2A2A2E] text-white pt-4 pb-4 px-4 rounded-[16px] cursor-pointer transition-all duration-200 hover:scale-[1.01] active:scale-[0.99] shadow-sm select-none"
               >
-                <span>{activeLanguage}</span>
-                <svg width="10" height="6" viewBox="0 0 10 6" fill="none" stroke="currentColor" strokeWidth="1.5">
-                  <path d="M1 1l4 4 4-4" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </button>
-
-              {langDropdownOpen && (
-                <div className="absolute right-0 mt-2 w-[140px] bg-[#FBFAFA] border border-black/5 rounded-[12px] shadow-lg py-1 z-20 animate-in fade-in slide-in-from-top-1 duration-200">
-                  {['Auto-detect', 'English', 'French'].map((lang) => (
-                    <button
-                      key={lang}
-                      onClick={() => {
-                        onChangeLanguage(lang);
-                        setLangDropdownOpen(false);
-                      }}
-                      className="w-full text-left px-4 py-2 text-[13px] font-sans hover:bg-black/[0.03] transition-colors"
-                    >
-                      {lang}
-                    </button>
-                  ))}
+                <div className="flex items-center gap-3.5">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="flex-shrink-0 shadow-sm">
+                    <path d="M12 1C9.08328 1 6.28344 2.15964 4.22266 4.2218C2.15975 6.28477 1.00057 9.08256 1 12C1 14.9162 2.16016 17.716 4.22266 19.7782C6.28344 21.8404 9.08328 23 12 23C14.9167 23 17.7166 21.8404 19.7773 19.7782C21.8398 17.716 23 14.9162 23 12C23 9.0838 21.8398 6.28395 19.7773 4.2218C17.7166 2.15964 14.9167 1 12 1Z" fill="url(#paint0_linear_735_1460)"/>
+                    <path d="M5.97927 11.8831C9.18646 10.4861 11.3246 9.56498 12.3936 9.11999C15.4496 7.84932 16.0838 7.62864 16.498 7.62116C16.5891 7.6197 16.7919 7.64221 16.9243 7.74921C17.0343 7.83944 17.0652 7.96147 17.0807 8.04715C17.0944 8.13274 17.1133 8.32782 17.0979 8.4801C16.9329 10.2195 16.2161 14.4404 15.8518 16.3886C15.6988 17.2129 15.3946 17.4893 15.1007 17.5163C14.4613 17.575 13.9766 17.0941 13.3579 16.6887C12.3902 16.0539 11.8436 15.659 10.9035 15.0397C9.81724 14.324 10.5219 13.9306 11.1407 13.2878C11.3022 13.1195 14.1176 10.5594 14.1708 10.3272C14.1777 10.2982 14.1846 10.1899 14.1193 10.1329C14.0557 10.0756 13.9611 10.0952 13.8924 10.1107C13.7944 10.1327 12.2493 11.155 9.25177 13.1774C8.81349 13.4789 8.41646 13.6259 8.05896 13.6181C7.66708 13.6097 6.91083 13.3961 6.3488 13.2135C5.6613 12.9896 5.11302 12.8712 5.16115 12.4908C5.18521 12.2928 5.45849 12.0902 5.97927 11.8831Z" fill="white"/>
+                    <defs>
+                      <linearGradient id="paint0_linear_735_1460" x1="1101" y1="1" x2="1101" y2="2201" gradientUnits="userSpaceOnUse">
+                        <stop stop-color="#2AABEE"/>
+                        <stop offset="1" stop-color="#229ED9"/>
+                      </linearGradient>
+                    </defs>
+                  </svg>
+                  <span className="font-sans font-medium text-[14px]">Connect Telegram</span>
                 </div>
-              )}
-            </div>
-          </div>
+                <div>
+                  {telegramConnected && (
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 border border-white/15 text-white text-[11px] font-sans font-medium">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#3CD070] shadow-glow" />
+                      Connected
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* WhatsApp Bar */}
+              <div 
+                onClick={onToggleWhatsApp}
+                className="mt-3 flex items-center justify-between bg-[#1E1E22] hover:bg-[#2A2A2E] text-white pt-4 pb-4 px-4 rounded-[16px] cursor-pointer transition-all duration-200 hover:scale-[1.01] active:scale-[0.99] shadow-sm select-none"
+              >
+                <div className="flex items-center gap-3.5">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="flex-shrink-0 shadow-sm">
+                    <path d="M12.002 2C17.5248 2 22.002 6.47715 22.002 12C22.002 17.5228 17.5248 22 12.002 22C10.1681 22 8.44948 21.5064 6.97183 20.6447L2.00613 22L3.35809 17.0315C2.49591 15.5536 2.00195 13.8345 2.00195 12C2.00195 6.47715 6.4791 2 12.002 2ZM8.39329 7.30833C8.2639 7.31742 8.13704 7.34902 8.02154 7.40811C7.93489 7.45244 7.85445 7.51651 7.72806 7.63586C7.60871 7.74855 7.53954 7.84697 7.46666 7.94186C7.09696 8.4232 6.89826 9.01405 6.90195 9.62098C6.90396 10.1116 7.0314 10.5884 7.23266 11.0336C7.64079 11.9364 8.31385 12.8908 9.20291 13.7759C9.41647 13.9885 9.6257 14.2034 9.85131 14.402C10.9548 15.3736 12.2698 16.0742 13.6917 16.4482C13.6917 16.4482 14.2517 16.5342 14.2599 16.5347C14.4454 16.5447 14.6306 16.5313 14.8163 16.5218C15.1076 16.5068 15.392 16.428 15.6494 16.2909C15.8149 16.2028 15.8932 16.159 16.0321 16.0714C16.0321 16.0714 16.0747 16.0426 16.1569 15.9814C16.2919 15.8808 16.3753 15.81 16.4876 15.6934C16.5704 15.6074 16.6416 15.5058 16.6966 15.3913C16.7748 15.2281 16.8535 14.9166 16.8848 14.6579C16.9087 14.4603 16.9015 14.3523 16.8989 14.2854C16.8946 14.1778 16.8057 14.0671 16.7083 14.0201L16.1268 13.7587C16.1268 13.7587 15.2573 13.3803 14.7255 13.1377C14.6701 13.1124 14.6095 13.1007 14.5486 13.097C14.4152 13.0888 14.2657 13.1236 14.1706 13.2238C14.1656 13.2218 14.0994 13.279 13.3759 14.1555C13.336 14.2032 13.2425 14.3069 13.0808 14.2972C13.0564 14.2955 13.0321 14.292 13.0084 14.2858C12.9429 14.2685 12.8791 14.2457 12.8167 14.2193C12.693 14.1668 12.6496 14.1469 12.5651 14.1105C11.9878 13.8583 11.458 13.5209 10.9897 13.108C10.8641 12.9974 10.7473 12.8783 10.6269 12.7616C10.2067 12.3543 9.86266 11.9211 9.60674 11.4938C9.59277 11.4705 9.57124 11.4368 9.54805 11.3991C9.50618 11.331 9.46 11.25 9.44552 11.1944C9.40835 11.0473 9.50696 10.9291 9.50696 10.9291C9.50696 10.9291 9.75036 10.663 9.86345 10.5183C9.97225 10.379 10.0662 10.2428 10.126 10.1457C10.2438 9.95633 10.2811 9.76062 10.2192 9.60963C9.93861 8.92565 9.64915 8.24536 9.35083 7.56894C9.29195 7.43545 9.11682 7.33846 8.95756 7.32007C8.90362 7.31384 8.84972 7.30758 8.79556 7.30402C8.6615 7.29748 8.52717 7.29892 8.39329 7.30833Z" fill="white"/>
+                  </svg>
+                  <span className="font-sans font-medium text-[14px]">Connect WhatsApp</span>
+                </div>
+                <div>
+                  {whatsappConnected && (
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 border border-white/15 text-white text-[11px] font-sans font-medium">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#3CD070] shadow-glow" />
+                      Connected
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Language Selection Row */}
+              <div className="flex items-center justify-between mt-6 select-none text-left">
+                <span className="font-sans font-medium text-[14.5px] text-[#1a1a1a]">Language</span>
+                <div className="relative">
+                  <button 
+                    onClick={() => setLangDropdownOpen(!langDropdownOpen)}
+                    className="flex items-center gap-2 px-4 py-2 rounded-[12px] bg-[#ECE8E2] hover:bg-[#E3DDD4] text-[#1a1a1a] text-[13.5px] font-sans transition-all duration-200 shadow-sm"
+                  >
+                    <span>{activeLanguage}</span>
+                    <svg width="10" height="6" viewBox="0 0 10 6" fill="none" stroke="currentColor" strokeWidth="1.5">
+                      <path d="M1 1l4 4 4-4" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </button>
+
+                  {langDropdownOpen && (
+                    <div className="absolute right-0 mt-2 w-[140px] bg-[#FBFAFA] border border-black/5 rounded-[12px] shadow-lg py-1 z-20 animate-in fade-in slide-in-from-top-1 duration-200">
+                      {['Auto-detect', 'English', 'French'].map((lang) => (
+                        <button
+                          key={lang}
+                          onClick={() => {
+                            onChangeLanguage(lang);
+                            setLangDropdownOpen(false);
+                          }}
+                          className="w-full text-left px-4 py-2 text-[13px] font-sans hover:bg-black/[0.03] transition-colors"
+                        >
+                          {lang}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </>
+          ) : (
+            <>
+              <h4 className="font-sans font-medium text-[20px] text-[#1a1a1a] tracking-tight select-none mb-4 text-left">
+                Privacy Settings
+              </h4>
+
+              <div className="space-y-4 text-left">
+                <div className="flex items-center justify-between p-4 bg-[#ECE8E2]/60 rounded-[16px] border border-black/5">
+                  <div className="flex-1 pr-4">
+                    <h5 className="font-sans font-bold text-[13.5px] text-black">Public Profile</h5>
+                    <p className="font-sans text-[11px] text-[#6f6f77] mt-0.5 leading-relaxed">
+                      Allow other Aven members to search for your profile and view your roadmap milestones.
+                    </p>
+                  </div>
+                  <button 
+                    onClick={() => setPublicProfile(!publicProfile)}
+                    className={`w-11 h-6 rounded-full flex items-center p-0.5 transition-colors duration-200 ${
+                      publicProfile ? 'bg-[#104d3b]' : 'bg-[#D1D5DB]'
+                    }`}
+                  >
+                    <div className={`w-5 h-5 rounded-full bg-white shadow transform transition-transform duration-200 ${
+                      publicProfile ? 'translate-x-5' : 'translate-x-0'
+                    }`} />
+                  </button>
+                </div>
+
+                <div className="flex items-center justify-between p-4 bg-[#ECE8E2]/60 rounded-[16px] border border-black/5">
+                  <div className="flex-1 pr-4">
+                    <h5 className="font-sans font-bold text-[13.5px] text-black">Share Interaction Data</h5>
+                    <p className="font-sans text-[11px] text-[#6f6f77] mt-0.5 leading-relaxed">
+                      Improve Aven by sharing anonymized chat transcript analytics with our research engine.
+                    </p>
+                  </div>
+                  <button 
+                    onClick={() => setShareData(!shareData)}
+                    className={`w-11 h-6 rounded-full flex items-center p-0.5 transition-colors duration-200 ${
+                      shareData ? 'bg-[#104d3b]' : 'bg-[#D1D5DB]'
+                    }`}
+                  >
+                    <div className={`w-5 h-5 rounded-full bg-white shadow transform transition-transform duration-200 ${
+                      shareData ? 'translate-x-5' : 'translate-x-0'
+                    }`} />
+                  </button>
+                </div>
+
+                <div className="pt-2 flex flex-col gap-3">
+                  <button 
+                    onClick={onExportData}
+                    className="w-full py-3 rounded-[12px] bg-[#ECE8E2] hover:bg-[#E3DDD4] active:scale-[0.99] text-[#1a1a1a] text-[13px] font-sans font-medium transition-all flex items-center justify-center gap-2 border border-black/5 shadow-sm"
+                  >
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                      <polyline points="7 10 12 15 17 10"></polyline>
+                      <line x1="12" y1="15" x2="12" y2="3"></line>
+                    </svg>
+                    Export my data (JSON)
+                  </button>
+
+                  <button 
+                    onClick={onResetAccount}
+                    className="w-full py-3 rounded-[12px] border border-red-500/20 hover:bg-red-500/5 active:scale-[0.99] text-red-600 text-[13px] font-sans font-medium transition-all flex items-center justify-center gap-2"
+                  >
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="3 6 5 6 21 6"></polyline>
+                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                      <line x1="10" y1="11" x2="10" y2="17"></line>
+                      <line x1="14" y1="11" x2="14" y2="17"></line>
+                    </svg>
+                    Reset my plan & history
+                  </button>
+                </div>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>
   );
 }
+
+
 
 export default function DashboardPage() {
   const [viewMode, setViewMode] = useState<ViewMode>('Grid');
@@ -879,6 +1497,9 @@ export default function DashboardPage() {
   // Dynamic Modals States
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [showGoalsDrawer, setShowGoalsDrawer] = useState(false);
+  const [showAdjustModal, setShowAdjustModal] = useState(false);
+  const [showRoadmap, setShowRoadmap] = useState(false);
 
   // Profile Form States
   const [profileName, setProfileName] = useState('Bright Mac');
@@ -889,6 +1510,7 @@ export default function DashboardPage() {
   const [telegramConnected, setTelegramConnected] = useState(false);
   const [whatsappConnected, setWhatsappConnected] = useState(false);
   const [activeLanguage, setActiveLanguage] = useState('Auto-detect');
+  const [habitFilter, setHabitFilter] = useState<'overall' | 'habit'>('overall');
 
   // Supabase Fetch Data States
   const [loading, setLoading] = useState(true);
@@ -931,7 +1553,8 @@ export default function DashboardPage() {
           .maybeSingle();
 
         if (userProfile) {
-          setProfileName(userProfile.email.split('@')[0] || 'Bright Mac');
+          setProfileName(userProfile.display_name || userProfile.email.split('@')[0] || 'Bright Mac');
+          setProfileUsername(userProfile.username || '');
           setTelegramConnected(!!userProfile.telegram_chat_id);
         }
 
@@ -973,16 +1596,12 @@ export default function DashboardPage() {
           .eq('user_id', authUser.id)
           .eq('status', 'done');
 
-        const { data: memories } = await supabase
-          .from('user_memories')
-          .select('*')
-          .eq('user_id', authUser.id)
-          .eq('memory_type', 'goal');
+        const supportingGoalsLength = activePlan?.plan_data?.supporting_goals?.length || 0;
 
         setStats({
           longestStreak: sprintProgress ? sprintProgress.length : 0,
-          goalsPending: memories ? memories.length : 4,
-          dreamDuration: activePlan?.timeline_years || 5,
+          goalsPending: supportingGoalsLength + 1,
+          dreamDuration: activePlan?.timeline_months || (activePlan?.timeline_years ? activePlan.timeline_years * 12 : 60),
         });
 
       } catch (err) {
@@ -994,6 +1613,147 @@ export default function DashboardPage() {
 
     loadDashboardData();
   }, []);
+
+  const handleSaveProfile = async (name: string, username: string, photo: string | null) => {
+    setProfileName(name);
+    setProfileUsername(username);
+    if (photo) {
+      setProfilePhoto(photo);
+    }
+
+    if (user) {
+      const supabase = createClient();
+      try {
+        const { error } = await supabase
+          .from('users')
+          .update({
+            display_name: name,
+            username: username
+          })
+          .eq('id', user.id);
+        if (error) throw error;
+      } catch (err) {
+        console.error('[Save Profile Error]:', err);
+      }
+    }
+  };
+
+  const handleAdjustPlan = async (intensity: string, months: number, description: string) => {
+    try {
+      const res = await fetch('/api/adjust-plan', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          intensity,
+          timeline_months: months,
+          change_description: description,
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error('Failed to adjust plan');
+      }
+
+      const data = await res.json();
+      if (data.success) {
+        window.location.reload();
+      }
+    } catch (err) {
+      console.error('[handleAdjustPlan Error]:', err);
+      throw err;
+    }
+  };
+
+  const handleSaveGoals = async (primary: string, supporting: string[]) => {
+    if (!plan || !user) return;
+    const supabase = createClient();
+    try {
+      const updatedPlanData = {
+        ...plan.plan_data,
+        primary_goal: primary,
+        supporting_goals: supporting
+      };
+
+      const { error } = await supabase
+        .from('plans')
+        .update({
+          primary_goal: primary,
+          plan_data: updatedPlanData
+        })
+        .eq('id', plan.id);
+
+      if (error) throw error;
+
+      setPlan({
+        ...plan,
+        primary_goal: primary,
+        plan_data: updatedPlanData
+      });
+
+      setStats((prev) => ({
+        ...prev,
+        goalsPending: supporting.length + 1
+      }));
+    } catch (err) {
+      console.error('[Save Goals Error]:', err);
+    }
+  };
+
+  const handleExportData = async () => {
+    const supabase = createClient();
+    try {
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      if (!authUser) return;
+
+      const { data: userProfile } = await supabase.from('users').select('*').eq('id', authUser.id).single();
+      const { data: userPlans } = await supabase.from('plans').select('*').eq('user_id', authUser.id);
+      const { data: userCards } = await supabase.from('daily_cards').select('*').eq('user_id', authUser.id);
+
+      const exportPayload = {
+        exportedAt: new Date().toISOString(),
+        profile: userProfile,
+        plans: userPlans,
+        daily_cards: userCards
+      };
+
+      const jsonString = `data:text/json;charset=utf-8,${encodeURIComponent(
+        JSON.stringify(exportPayload, null, 2)
+      )}`;
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute('href', jsonString);
+      downloadAnchor.setAttribute('download', `aven_data_export_${authUser.id}.json`);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+    } catch (err) {
+      console.error('[Export Data Error]:', err);
+    }
+  };
+
+  const handleResetAccount = async () => {
+    if (!confirm("Are you absolutely sure you want to reset your account? This will permanently delete your plan, completed tasks, and history.")) {
+      return;
+    }
+    const supabase = createClient();
+    try {
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      if (!authUser) return;
+
+      await supabase.from('plans').delete().eq('user_id', authUser.id);
+      await supabase.from('daily_cards').delete().eq('user_id', authUser.id);
+      await supabase.from('sprint_progress').delete().eq('user_id', authUser.id);
+      await supabase.from('user_memories').delete().eq('user_id', authUser.id);
+
+      localStorage.removeItem("aven_onboarding_transcript");
+      localStorage.removeItem("aven_onboarding_email");
+
+      window.location.href = '/';
+    } catch (err) {
+      console.error('[Reset Account Error]:', err);
+    }
+  };
 
   const handleStatusChange = async (cardId: string, newStatus: 'pending' | 'done' | 'adjusted' | 'partial') => {
     const supabase = createClient();
@@ -1028,7 +1788,7 @@ export default function DashboardPage() {
       .replace(/\//g, '_')
       .replace(/=+$/, '');
     
-    const botUrl = `https://t.me/AvenCoachBot?start=${token}`;
+    const botUrl = `https://t.me/AvenBot?start=${token}`;
     window.open(botUrl, '_blank');
   };
 
@@ -1071,10 +1831,16 @@ export default function DashboardPage() {
             </p>
           </div>
           <div className="flex items-center gap-3 mt-1 flex-shrink-0">
-            <button className="flex items-center gap-2 px-5 py-2.5 rounded-[8px] border border-[#1a1a1a]/20 text-[#1a1a1a] text-[13px] font-sans font-medium hover:border-[#1a1a1a]/40 transition-colors whitespace-nowrap">
+            <button 
+              onClick={() => setShowGoalsDrawer(true)}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-[8px] border border-[#1a1a1a]/20 text-[#1a1a1a] text-[13px] font-sans font-medium hover:border-[#1a1a1a]/40 transition-colors whitespace-nowrap"
+            >
               Update Goals
             </button>
-            <button className="px-5 py-2.5 rounded-[8px] bg-[#1a1a1a] text-white text-[13px] font-sans font-medium hover:bg-[#333] transition-colors whitespace-nowrap">
+            <button 
+              onClick={() => setShowAdjustModal(true)}
+              className="px-5 py-2.5 rounded-[8px] bg-[#1a1a1a] text-white text-[13px] font-sans font-medium hover:bg-[#333] transition-colors whitespace-nowrap"
+            >
               Adjust overall plan
             </button>
           </div>
@@ -1152,11 +1918,11 @@ export default function DashboardPage() {
 
           {/* Left column */}
           <div className="flex flex-col gap-4">
-            <MapBanner />
+            <MapBanner onClick={() => setShowRoadmap(true)} />
             <div className="grid grid-cols-3 gap-3">
               <StatCard value={stats.goalsPending.toString()} label={"Goals\nPending"} accent />
               <StatCard value={stats.longestStreak.toString()} unit="DAYS" label={"Longest\nstreak"} />
-              <StatCard value={stats.dreamDuration.toString()} unit="YEARS" label={"Dream\nduration"} />
+              <StatCard value={stats.dreamDuration.toString()} unit="MONTHS" label={"Dream\nduration"} />
             </div>
             {/* Upgrade to Pro */}
             <div className="rounded-[20px] bg-[#1a1a1a] p-6 flex flex-col justify-between min-h-[130px]">
@@ -1178,30 +1944,30 @@ export default function DashboardPage() {
           </div>
 
           {/* Right column — habit grid fills full height */}
-          <HabitGrid />
+          <HabitGrid dailyCards={cards} filter={habitFilter} onFilterChange={setHabitFilter} />
         </div>
       </main>
 
       {/* ── Footer ── */}
-      <footer className="px-6 md:px-8 py-5 flex items-center justify-between text-[11px] font-sans text-[#1a1a1a]/30">
+      <footer className="px-6 md:px-8 py-5 flex items-center justify-between text-[11px] font-sans text-[#1a1a1a]/30 border-t border-black/5">
         <div className="flex items-center gap-4">
           <span>© Aven 2026</span>
           <span className="text-[#1a1a1a]/15">·</span>
           <a href="#" className="hover:text-[#1a1a1a]/55 transition-colors">Privacy.</a>
         </div>
         <div className="flex items-center gap-4">
-          <a href="#" aria-label="Instagram" className="hover:opacity-60 transition-opacity">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="#1a1a1a" fillOpacity="0.35">
+          <a href="#" aria-label="Instagram" className="hover:opacity-100 transition-opacity">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="#1a1a1a" fillOpacity="0.65">
               <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0 2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 3.674a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/>
             </svg>
           </a>
-          <a href="#" aria-label="X" className="hover:opacity-60 transition-opacity">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="#1a1a1a" fillOpacity="0.35">
+          <a href="#" aria-label="X" className="hover:opacity-100 transition-opacity">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="#1a1a1a" fillOpacity="0.65">
               <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
             </svg>
           </a>
-          <a href="#" aria-label="Telegram" className="hover:opacity-60 transition-opacity">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="#1a1a1a" fillOpacity="0.35">
+          <a href="#" aria-label="Telegram" className="hover:opacity-100 transition-opacity">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="#1a1a1a" fillOpacity="0.65">
               <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-.995-.651-.35-1.009.217-1.594.149-.155 2.732-2.506 2.782-2.72a.207.207 0 0 0-.049-.184c-.048-.047-.117-.031-.168-.019-.072.016-1.22.776-3.447 2.279-.326.224-.622.333-.887.328-.292-.006-.854-.165-1.272-.301-.513-.168-.92-.257-.884-.542.018-.15.225-.304.62-.465 2.429-1.058 4.049-1.756 4.858-2.095 2.311-.96 2.791-1.127 3.103-1.132z"/>
             </svg>
           </a>
@@ -1215,13 +1981,7 @@ export default function DashboardPage() {
         displayName={profileName}
         username={profileUsername}
         userId={user?.id}
-        onSave={(name, username, photo) => {
-          setProfileName(name);
-          setProfileUsername(username);
-          if (photo) {
-            setProfilePhoto(photo);
-          }
-        }}
+        onSave={handleSaveProfile}
       />
 
       <SettingsModal 
@@ -1233,6 +1993,31 @@ export default function DashboardPage() {
         onToggleWhatsApp={() => setWhatsappConnected(!whatsappConnected)}
         activeLanguage={activeLanguage}
         onChangeLanguage={(lang) => setActiveLanguage(lang)}
+        onExportData={handleExportData}
+        onResetAccount={handleResetAccount}
+      />
+
+      <UpdateGoalsDrawer 
+        isOpen={showGoalsDrawer}
+        onClose={() => setShowGoalsDrawer(false)}
+        supportingGoals={plan?.plan_data?.supporting_goals || []}
+        primaryGoal={plan?.primary_goal || ""}
+        onSaveGoals={handleSaveGoals}
+      />
+
+      <AdjustPlanModal 
+        isOpen={showAdjustModal}
+        onClose={() => setShowAdjustModal(false)}
+        currentIntensity={plan?.plan_data?.intensity || "steady"}
+        currentTimelineMonths={plan?.timeline_months || (plan?.timeline_years ? plan.timeline_years * 12 : 12)}
+        onAdjustPlan={handleAdjustPlan}
+      />
+
+      <RoadmapOverlay 
+        isOpen={showRoadmap}
+        onClose={() => setShowRoadmap(false)}
+        plan={plan}
+        dailyCards={cards}
       />
     </div>
   );
