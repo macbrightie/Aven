@@ -163,6 +163,7 @@ const TRANSLATIONS: Record<string, Record<string, string>> = {
     longest_streak: 'Longest\nstreak',
     dream_duration: 'Dream\nduration',
     upgrade_pro: 'Upgrade to Pro',
+    upgrade_plan: 'Upgrade plan',
     general_settings: 'General Settings',
     connect_telegram: 'Connect Telegram',
     connect_whatsapp: 'Connect WhatsApp',
@@ -191,6 +192,7 @@ const TRANSLATIONS: Record<string, Record<string, string>> = {
     longest_streak: 'Série la plus\nlongue',
     dream_duration: 'Durée du\nrêve',
     upgrade_pro: 'Passer à Pro',
+    upgrade_plan: 'Mettre à niveau le plan',
     general_settings: 'Paramètres Généraux',
     connect_telegram: 'Connecter Telegram',
     connect_whatsapp: 'Connecter WhatsApp',
@@ -539,7 +541,7 @@ function HabitGrid({
         <div ref={dropdownRef} className="relative self-start md:self-auto flex-shrink-0 z-40 select-none">
           <button 
             onClick={() => setIsOpen(!isOpen)}
-            className="flex items-center gap-1.5 pl-[8px] pr-[4px] py-[3px] rounded-[6px] bg-[#1a1a1a] hover:bg-[#2A2A2E] text-white text-[12px] font-sans font-medium border border-white/10 outline-none cursor-pointer transition-colors shadow-sm select-none"
+            className="flex items-center gap-1.5 pl-[8px] pr-[4px] py-[4px] rounded-[6px] bg-[#1a1a1a] hover:bg-[#2A2A2E] text-white text-[12px] font-sans font-medium border border-white/10 outline-none cursor-pointer transition-colors shadow-sm select-none"
           >
             <span className="leading-none">
               {filter === 'overall' ? t('moves_checked', langKey) : t('specific_habits', langKey)}
@@ -2129,7 +2131,7 @@ export default function DashboardPage() {
                   href="/pro"
                   className="inline-flex items-center gap-2 px-5 py-2.5 rounded-[8px] bg-white/10 border border-white/10 text-white text-[12px] font-sans hover:bg-white/15 transition-colors"
                 >
-                  {t('get_started', langKey) || 'Get started'}
+                  {t('upgrade_plan', langKey) || 'Upgrade plan'}
                   <svg width="12" height="12" viewBox="0 0 20 20" fill="none">
                     <path d="M4 10h12M10 4l6 6-6 6" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                   </svg>
