@@ -54,7 +54,7 @@ function DashboardNav({
         <div className="w-6 h-6 rounded-full bg-[#104d3b] flex items-center justify-center">
           <div className="w-2.5 h-2.5 rounded-full bg-white" />
         </div>
-        <span className="font-sans text-[16px] font-medium text-[#1a1a1a] tracking-tight">daylon</span>
+        <span className="font-sans text-[16px] font-medium text-[#1a1a1a] tracking-tight">deylon</span>
       </Link>
       {/* Right side */}
       <div className="flex items-center gap-3">
@@ -917,7 +917,7 @@ function AdjustPlanModal({ isOpen, onClose, currentIntensity, currentTimelineMon
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!changeDescription.trim()) {
-      alert("Please tell us what has changed in your life so Daylon can adjust your plan.");
+      alert("Please tell us what has changed in your life so Deylon can adjust your plan.");
       return;
     }
     setLoading(true);
@@ -941,13 +941,13 @@ function AdjustPlanModal({ isOpen, onClose, currentIntensity, currentTimelineMon
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
             </svg>
-            <span className="text-[14px] font-sans font-medium text-black tracking-wide">Daylon is rewriting your plan...</span>
+            <span className="text-[14px] font-sans font-medium text-black tracking-wide">Deylon is rewriting your plan...</span>
           </div>
         )}
 
         <DialogHeader className="p-8 pb-4">
           <DialogTitle>Adjust Overall Plan</DialogTitle>
-          <DialogDescription>Change your sprint intensity, timeline, or tell Daylon what's changed in your life.</DialogDescription>
+          <DialogDescription>Change your sprint intensity, timeline, or tell Deylon what's changed in your life.</DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6 px-8 pb-2 text-left">
@@ -1005,7 +1005,7 @@ function AdjustPlanModal({ isOpen, onClose, currentIntensity, currentTimelineMon
               className="w-full px-4 py-3 rounded-[12px] bg-[#ECE8E2] text-[#1a1a1a] text-[13.5px] font-sans border border-transparent outline-none focus:bg-white focus:border-black/10 focus:ring-1 focus:ring-black/10 transition-all shadow-inner placeholder-black/25 resize-none leading-relaxed"
             />
             <span className="text-[11px] font-sans text-[#6f6f77] mt-1.5 leading-relaxed">
-              ⚠️ Daylon will preserve all completed cards and rewrite remaining tasks to fit your updated parameters.
+              ⚠️ Deylon will preserve all completed cards and rewrite remaining tasks to fit your updated parameters.
             </span>
           </div>
         </form>
@@ -1078,7 +1078,7 @@ function RoadmapOverlay({ isOpen, onClose, plan, dailyCards }: RoadmapOverlayPro
           <div className="w-5 h-5 rounded-full bg-[#104d3b] flex items-center justify-center">
             <div className="w-2 h-2 rounded-full bg-white" />
           </div>
-          <span className="font-sans text-[15px] font-medium tracking-tight text-white/90">daylon roadmap</span>
+          <span className="font-sans text-[15px] font-medium tracking-tight text-white/90">deylon roadmap</span>
         </div>
         <button 
           onClick={onClose}
@@ -1195,7 +1195,7 @@ function RoadmapOverlay({ isOpen, onClose, plan, dailyCards }: RoadmapOverlayPro
                 <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
               </svg>
             </div>
-            <h3 className="text-2xl font-sans font-bold mb-2">Unlock Daylon Pro</h3>
+            <h3 className="text-2xl font-sans font-bold mb-2">Unlock Deylon Pro</h3>
             <p className="text-[14px] text-white/70 leading-relaxed mb-6">
               Phase {lockedPhase.id} ({lockedPhase.title}) is a premium feature. Lock in your relocation success and get personalized admissions guides, visa application templates, and live software engineering portfolio feedback tailored specifically for France.
             </p>
@@ -1241,7 +1241,7 @@ function ProfileModal({ isOpen, onClose, displayName, onSave, username, userId }
       setTempDisplayName(displayName);
       setTempUsername(username);
       if (userId) {
-        const savedPhoto = localStorage.getItem(`daylon_avatar_${userId}`);
+        const savedPhoto = localStorage.getItem(`deylon_avatar_${userId}`);
         setProfilePhoto(savedPhoto);
       }
     }
@@ -1269,7 +1269,7 @@ function ProfileModal({ isOpen, onClose, displayName, onSave, username, userId }
         const base64String = reader.result as string;
         setProfilePhoto(base64String);
         if (userId) {
-          localStorage.setItem(`daylon_avatar_${userId}`, base64String);
+          localStorage.setItem(`deylon_avatar_${userId}`, base64String);
         }
       };
       reader.readAsDataURL(file);
@@ -1639,14 +1639,14 @@ export default function DashboardPage() {
         }
         setUser(authUser);
 
-        const savedPhoto = localStorage.getItem(`daylon_avatar_${authUser.id}`);
+        const savedPhoto = localStorage.getItem(`deylon_avatar_${authUser.id}`);
         if (savedPhoto) {
           setProfilePhoto(savedPhoto);
         }
 
         // Load cached name/username from localStorage immediately (fast render)
-        const cachedName = localStorage.getItem(`daylon_display_name_${authUser.id}`);
-        const cachedUsername = localStorage.getItem(`daylon_username_${authUser.id}`);
+        const cachedName = localStorage.getItem(`deylon_display_name_${authUser.id}`);
+        const cachedUsername = localStorage.getItem(`deylon_username_${authUser.id}`);
         if (cachedName) setProfileName(cachedName);
         if (cachedUsername) setProfileUsername(cachedUsername);
 
@@ -1691,8 +1691,8 @@ export default function DashboardPage() {
         setProfileUsername(dbUsername);
         
         // Keep localStorage in sync
-        localStorage.setItem(`daylon_display_name_${authUser.id}`, dbName);
-        localStorage.setItem(`daylon_username_${authUser.id}`, dbUsername);
+        localStorage.setItem(`deylon_display_name_${authUser.id}`, dbName);
+        localStorage.setItem(`deylon_username_${authUser.id}`, dbUsername);
 
         if (userProfile) {
           setTelegramConnected(!!userProfile.telegram_chat_id);
@@ -1764,8 +1764,8 @@ export default function DashboardPage() {
 
     if (user) {
       // Always persist to localStorage first so refresh always restores the correct name
-      localStorage.setItem(`daylon_display_name_${user.id}`, name);
-      localStorage.setItem(`daylon_username_${user.id}`, username);
+      localStorage.setItem(`deylon_display_name_${user.id}`, name);
+      localStorage.setItem(`deylon_username_${user.id}`, username);
       console.log('[DEBUG-save] Saved to localStorage for user:', user.id);
 
       const supabase = createClient();
@@ -1881,7 +1881,7 @@ export default function DashboardPage() {
       )}`;
       const downloadAnchor = document.createElement('a');
       downloadAnchor.setAttribute('href', jsonString);
-      downloadAnchor.setAttribute('download', `daylon_data_export_${authUser.id}.json`);
+      downloadAnchor.setAttribute('download', `deylon_data_export_${authUser.id}.json`);
       document.body.appendChild(downloadAnchor);
       downloadAnchor.click();
       downloadAnchor.remove();
@@ -1904,8 +1904,8 @@ export default function DashboardPage() {
       await supabase.from('sprint_progress').delete().eq('user_id', authUser.id);
       await supabase.from('user_memories').delete().eq('user_id', authUser.id);
 
-      localStorage.removeItem("daylon_onboarding_transcript");
-      localStorage.removeItem("daylon_onboarding_email");
+      localStorage.removeItem("deylon_onboarding_transcript");
+      localStorage.removeItem("deylon_onboarding_email");
 
       window.location.href = '/';
     } catch (err) {
@@ -1936,7 +1936,7 @@ export default function DashboardPage() {
 
   const handleToggleTelegram = () => {
     if (telegramConnected) {
-      alert("Your Telegram account is connected to Daylon!");
+      alert("Your Telegram account is connected to Deylon!");
       return;
     }
     if (!user) return;
@@ -1946,7 +1946,7 @@ export default function DashboardPage() {
       .replace(/\//g, '_')
       .replace(/=+$/, '');
     
-    const botUrl = `https://t.me/DaylonBot?start=${token}`;
+    const botUrl = `https://t.me/DeylonBot?start=${token}`;
     window.open(botUrl, '_blank');
   };
 
@@ -1962,7 +1962,7 @@ export default function DashboardPage() {
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
           </svg>
-          <span className="text-[14px] font-medium tracking-wide">Syncing Daylon Dashboard...</span>
+          <span className="text-[14px] font-medium tracking-wide">Syncing Deylon Dashboard...</span>
         </div>
       </div>
     );
@@ -2018,7 +2018,7 @@ export default function DashboardPage() {
               <div>
                 <h4 className="text-[18px] font-sans font-bold leading-snug">Day {activeDay} of your 21-day sprint</h4>
                 <p className="text-[14px] text-white/80 font-sans mt-1 leading-relaxed max-w-2xl">
-                  You are approaching the end of your initial sprint! Unlock Daylon Pro to continue with the next phase of your relocation plan, including customized study guides, visa interviews prep, and professional French reviews.
+                  You are approaching the end of your initial sprint! Unlock Deylon Pro to continue with the next phase of your relocation plan, including customized study guides, visa interviews prep, and professional French reviews.
                 </p>
               </div>
             </div>
@@ -2152,7 +2152,7 @@ export default function DashboardPage() {
       {/* ── Footer ── */}
       <footer className="px-6 md:px-8 py-5 flex items-center justify-between text-[11px] font-sans text-[#1a1a1a]/30 border-t border-black/5">
         <div className="flex items-center gap-4">
-          <span className="font-sans">© Daylon 2026</span>
+          <span className="font-sans">© Deylon 2026</span>
           <span className="text-[#1a1a1a]/15">·</span>
           <button 
             onClick={(e) => {

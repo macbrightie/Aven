@@ -45,7 +45,7 @@ export function buildDailyReminder(data: DailyReminderData): string {
     `⏱ <i>${data.duration}</i>`,
     `🎯 <i>Towards: ${data.chainToGoal}</i>`,
     ``,
-    `<a href="${data.appUrl}/dashboard">→ Open Daylon dashboard</a>`,
+    `<a href="${data.appUrl}/dashboard">→ Open Deylon dashboard</a>`,
   ].join('\n');
 }
 
@@ -54,7 +54,7 @@ export function buildWelcomeMessage(data: WelcomeMessageData): string {
   return [
     `✅ <b>You're connected${name}!</b>`,
     ``,
-    `Daylon will send your daily task reminders here, starting tomorrow morning.`,
+    `Deylon will send your daily task reminders here, starting tomorrow morning.`,
     ``,
     `🎯 <b>Your goal:</b> ${data.primaryGoal}`,
     ``,

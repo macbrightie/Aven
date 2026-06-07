@@ -3,8 +3,8 @@ import { Suspense } from 'react';
 import { VerifyClient } from '@/components/auth/VerifyClient';
 
 export const metadata: Metadata = {
-  title: 'Verify your email — Daylon',
-  description: 'Confirm your magic link to access Daylon.',
+  title: 'Verify your email — Deylon',
+  description: 'Confirm your magic link to access Deylon.',
 };
 
 export default function VerifyPage() {

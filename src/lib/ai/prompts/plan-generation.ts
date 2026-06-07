@@ -145,7 +145,7 @@ RETURN ONLY VALID JSON — no preamble, no explanation, no markdown code blocks:
   "biggest_risk_and_fix": {
     "risk": "Their stated blocker reframed as a solvable problem",
     "fix": "Specific strategy based on how they said they'd avoid it this time",
-    "early_warning_sign": "The specific behaviour that signals they're about to fall off — so Daylon can catch it early"
+    "early_warning_sign": "The specific behaviour that signals they're about to fall off — so Deylon can catch it early"
   },
   "identity_statement": "The identity they are building toward — 'I am someone who...' — used in recovery messages",
   "first_move_tonight": "One thing they can do in the next 2 hours. Immediate. Under 10 minutes.",

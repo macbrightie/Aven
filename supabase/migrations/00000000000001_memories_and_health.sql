@@ -1,5 +1,5 @@
 -- ============================================================
--- Daylon Database Schema Update
+-- Deylon Database Schema Update
 -- Migration: 00000000000001_memories_and_health.sql
 -- ============================================================
 

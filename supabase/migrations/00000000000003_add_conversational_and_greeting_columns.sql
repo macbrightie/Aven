@@ -1,5 +1,5 @@
 -- ============================================================
--- Daylon Database Schema Update
+-- Deylon Database Schema Update
 -- Migration: 00000000000003_add_conversational_and_greeting_columns.sql
 -- ============================================================
 

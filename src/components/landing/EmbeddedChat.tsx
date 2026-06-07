@@ -13,7 +13,7 @@ type ChatState = "idle" | "chatting" | "email" | "done";
 
 interface Message {
   id: string;
-  role: "daylon" | "me";
+  role: "deylon" | "me";
   text: string;
 }
 
@@ -75,7 +75,7 @@ function Spinner() {
           d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
         />
       </svg>
-      Daylon is writing...
+      Deylon is writing...
     </div>
   );
 }
@@ -91,7 +91,7 @@ function ChatMessage({
   isLast: boolean;
   showReactions: boolean;
 }) {
-  const isDaylon = message.role === "daylon";
+  const isDeylon = message.role === "deylon";
 
   return (
     <motion.div
@@ -102,15 +102,15 @@ function ChatMessage({
     >
       <p
         className={`text-[11px] font-sans font-semibold tracking-wide mb-1 ${
-          isDaylon ? "text-[#1a1a1a]" : "text-[#104d3b]"
+          isDeylon ? "text-[#1a1a1a]" : "text-[#104d3b]"
         }`}
       >
-        {isDaylon ? "Daylon" : "Me"}
+        {isDeylon ? "Deylon" : "Me"}
       </p>
       <div className="relative pl-3.5">
         <div
           className={`absolute left-0 top-[3px] bottom-[3px] w-[3px] rounded-full ${
-            isDaylon ? "bg-[#1a1a1a]/35" : "bg-[#104d3b]"
+            isDeylon ? "bg-[#1a1a1a]/35" : "bg-[#104d3b]"
           }`}
         />
         <p className="text-[13px] md:text-[14px] text-[#1a1a1a] font-sans leading-relaxed">
@@ -199,7 +199,7 @@ function ChatPanel({
             disabled={generating}
             placeholder={
               generating 
-                ? "Daylon is writing..." 
+                ? "Deylon is writing..." 
                 : (isListening ? "Listening..." : "Reply...")
             }
             rows={2}
@@ -416,7 +416,7 @@ function DashboardPanel() {
             </svg>
           </div>
           <p className="text-[15px] md:text-[17px] font-sans text-[#1a1a1a] leading-relaxed max-w-sm pt-1.5">
-            <b>Magic link sent!</b> Click the confirmation link in your email to instantly log in and access your personal Daylon coach plan.
+            <b>Magic link sent!</b> Click the confirmation link in your email to instantly log in and access your personal Deylon coach plan.
           </p>
         </div>
 
@@ -439,13 +439,13 @@ export function EmbeddedChat() {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "m1",
-      role: "daylon",
-      text: "Hi, I'm Daylon. I'm here to help you turn your biggest goals into a daily reality.",
+      role: "deylon",
+      text: "Hi, I'm Deylon. I'm here to help you turn your biggest goals into a daily reality.",
     },
     {
       id: "m2",
-      role: "daylon",
-      text: "What's the one thing you've been wanting to change or achieve, but hdaylon't found the right path for yet? Tell me freely.",
+      role: "deylon",
+      text: "What's the one thing you've been wanting to change or achieve, but hdeylon't found the right path for yet? Tell me freely.",
     },
   ]);
   const [generating, setGenerating] = useState(false);
@@ -468,7 +468,7 @@ export function EmbeddedChat() {
     try {
       // Map frontend messages to backend expected roles
       const payloadMessages = newMessages.map((m) => ({
-        role: m.role === 'daylon' ? 'assistant' as const : 'user' as const,
+        role: m.role === 'deylon' ? 'assistant' as const : 'user' as const,
         content: m.text,
       }));
 
@@ -483,14 +483,14 @@ export function EmbeddedChat() {
       });
 
       if (!res.ok) {
-        throw new Error("Failed to send message to Daylon");
+        throw new Error("Failed to send message to Deylon");
       }
 
       const data = await res.json() as { message: string; complete: boolean };
 
       const assistantMsg: Message = {
         id: (Date.now() + 1).toString(),
-        role: "daylon",
+        role: "deylon",
         text: data.message || "I'm listening. Tell me more.",
       };
 
@@ -498,16 +498,16 @@ export function EmbeddedChat() {
 
       // If onboarding is complete, save transcript and advance to Email capture
       if (data.complete) {
-        localStorage.setItem("daylon_onboarding_transcript", JSON.stringify(newMessages.concat(assistantMsg)));
+        localStorage.setItem("deylon_onboarding_transcript", JSON.stringify(newMessages.concat(assistantMsg)));
         setTimeout(() => {
           setChatState("email");
-        }, 2500); // Elegant delay so the user can digest the final Daylon onboarding message
+        }, 2500); // Elegant delay so the user can digest the final Deylon onboarding message
       }
     } catch (error) {
       console.error("[EmbeddedChat Chat Error]:", error);
       const errorMsg: Message = {
         id: (Date.now() + 1).toString(),
-        role: "daylon",
+        role: "deylon",
         text: "I'm sorry, I hit a brief connection snag. Could you try sending that again?",
       };
       setMessages((prev) => [...prev, errorMsg]);
@@ -522,7 +522,7 @@ export function EmbeddedChat() {
       const supabase = createClient();
       
       // Cache their email to pull on successful login
-      localStorage.setItem("daylon_onboarding_email", email);
+      localStorage.setItem("deylon_onboarding_email", email);
 
       const { error } = await supabase.auth.signInWithOtp({
         email,
@@ -575,7 +575,7 @@ export function EmbeddedChat() {
                 letterSpacing: '0.22em',
               }}
             >
-              Talk to Daylon
+              Talk to Deylon
             </span>
           </div>
         </div>
@@ -592,7 +592,7 @@ export function EmbeddedChat() {
             <p className="mt-3 text-[12px] font-mono tracking-wide">
               <span className="text-[#BDBDBF]">Take your time, Talk freely.</span>{" "}
               <span className="text-white font-semibold">
-                Daylon will handle the rest.
+                Deylon will handle the rest.
               </span>
             </p>
           </div>

@@ -44,11 +44,11 @@ const hafferXHMono = localFont({
 });
 
 export const metadata: Metadata = {
-  title: 'Daylon — Your AI Life Planner',
+  title: 'Deylon — Your AI Life Planner',
   description:
-    'Daylon turns your biggest goals into a personalised, day-by-day action plan — powered by AI.',
+    'Deylon turns your biggest goals into a personalised, day-by-day action plan — powered by AI.',
   openGraph: {
-    title: 'Daylon — Your AI Life Planner',
+    title: 'Deylon — Your AI Life Planner',
     description:
       'Conversational onboarding, personalised AI life plans, and daily task reminders via Telegram.',
     type: 'website',

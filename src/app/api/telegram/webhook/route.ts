@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
     const chatId = message.chat.id;
     const text = message.text.trim();
 
-    // Handle /start <token> command — links Telegram to Daylon account
+    // Handle /start <token> command — links Telegram to Deylon account
     if (text.startsWith('/start')) {
       const parts = text.split(' ');
       const token = parts[1]; // deep link token
@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
       if (!token) {
         await sendMessage(
           chatId,
-          '👋 Welcome to Daylon! To connect your account, go to your Daylon dashboard and click <b>Connect Telegram</b>.'
+          '👋 Welcome to Deylon! To connect your account, go to your Deylon dashboard and click <b>Connect Telegram</b>.'
         );
         return NextResponse.json({ ok: true });
       }
@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
       try {
         userId = Buffer.from(token, 'base64url').toString('utf-8');
       } catch {
-        await sendMessage(chatId, '❌ Invalid link. Please try again from your Daylon dashboard.');
+        await sendMessage(chatId, '❌ Invalid link. Please try again from your Deylon dashboard.');
         return NextResponse.json({ ok: true });
       }
 
@@ -77,13 +77,13 @@ export async function POST(request: NextRequest) {
         .single();
 
       if (error || !user) {
-        await sendMessage(chatId, '❌ Could not link your account. Please try again from your Daylon dashboard.');
+        await sendMessage(chatId, '❌ Could not link your account. Please try again from your Deylon dashboard.');
         return NextResponse.json({ ok: true });
       }
 
       await sendMessage(
         chatId,
-        '👋 <b>Welcome to Daylon!</b>\n\nBefore we start our daily checks, how should I address you? (For instance, Nigerian developers might prefer "Hey Bright", "Greetings Dr. Bright", "Yo man", "Greetings sis" or something cultural that fits you). Reply with your preferred greeting!'
+        '👋 <b>Welcome to Deylon!</b>\n\nBefore we start our daily checks, how should I address you? (For instance, Nigerian developers might prefer "Hey Bright", "Greetings Dr. Bright", "Yo man", "Greetings sis" or something cultural that fits you). Reply with your preferred greeting!'
       );
     } else {
       const supabase = await createServiceClient();
@@ -98,7 +98,7 @@ export async function POST(request: NextRequest) {
       if (userError || !user) {
         await sendMessage(
           chatId,
-          '👋 Welcome to Daylon! To link your Telegram, please visit your web dashboard and click <b>Connect Telegram</b>.'
+          '👋 Welcome to Deylon! To link your Telegram, please visit your web dashboard and click <b>Connect Telegram</b>.'
         );
         return NextResponse.json({ ok: true });
       }
@@ -129,7 +129,7 @@ export async function POST(request: NextRequest) {
 
         await sendMessage(
           chatId,
-          `✅ <b>Got it, I'll address you as "${text}"!</b>\n\nDaylon will send your daily tasks and check-ins here, starting this evening.\n\n🎯 <b>Your goal:</b> ${plan?.primary_goal ?? 'your goal'}`
+          `✅ <b>Got it, I'll address you as "${text}"!</b>\n\nDeylon will send your daily tasks and check-ins here, starting this evening.\n\n🎯 <b>Your goal:</b> ${plan?.primary_goal ?? 'your goal'}`
         );
         return NextResponse.json({ ok: true });
       }
@@ -325,7 +325,7 @@ export async function POST(request: NextRequest) {
           cleanReply = reply.replace(/\[PROFILE_READY\][\s\S]*?\[\/PROFILE_READY\]/g, '').trim();
         }
 
-        // Send Daylon's reply back to user via Telegram
+        // Send Deylon's reply back to user via Telegram
         await sendMessage(chatId, cleanReply);
       } else {
         // DAILY COACHING SPRINT CHAT FLOW
@@ -378,7 +378,7 @@ export async function POST(request: NextRequest) {
         // Call daily coaching chat service
         const reply = await DailyChatService.chat(supabase, user.id, conversation.id, sprintDay);
 
-        // Save Daylon's reply to the database
+        // Save Deylon's reply to the database
         const finalMessages = [
           ...updatedMessages,
           { role: 'assistant', content: reply }
@@ -389,7 +389,7 @@ export async function POST(request: NextRequest) {
           .update({ messages: finalMessages })
           .eq('id', conversation.id);
 
-        // Send Daylon's response to the user via Telegram
+        // Send Deylon's response to the user via Telegram
         await sendMessage(chatId, reply);
 
         // Run background processes concurrently

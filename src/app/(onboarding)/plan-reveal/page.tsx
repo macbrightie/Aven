@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Your life plan — Daylon',
-  description: 'Your personalised Daylon life plan is ready.',
+  title: 'Your life plan — Deylon',
+  description: 'Your personalised Deylon life plan is ready.',
 };
 
 /**

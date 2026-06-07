@@ -8,9 +8,9 @@ import { FounderSection } from '@/components/landing/FounderSection';
 import { SiteFooter } from '@/components/landing/SiteFooter';
 
 export const metadata: Metadata = {
-  title: 'Daylon — Your AI Life Planner',
+  title: 'Deylon — Your AI Life Planner',
   description:
-    'Daylon turns your biggest goals into a personalised, day-by-day action plan — powered by AI.',
+    'Deylon turns your biggest goals into a personalised, day-by-day action plan — powered by AI.',
 };
 
 export default function LandingPage() {
