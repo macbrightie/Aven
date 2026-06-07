@@ -1,5 +1,5 @@
 -- ============================================================
--- Aven Database Schema Update
+-- Deylon Database Schema Update
 -- Migration: 00000000000002_add_timeline_months.sql
 -- ============================================================
 

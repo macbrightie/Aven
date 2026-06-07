@@ -1,5 +1,5 @@
 {
-  "name": "aven-app",
+  "name": "deylon-app",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -9,16 +9,26 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@radix-ui/react-dialog": "^1.1.16",
+    "@radix-ui/react-label": "^2.1.9",
+    "@radix-ui/react-separator": "^1.1.9",
+    "@radix-ui/react-slider": "^1.4.0",
+    "@radix-ui/react-tabs": "^1.1.14",
     "@supabase/ssr": "^0.10.2",
     "@supabase/supabase-js": "^2.105.1",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
     "dotenv": "^17.4.2",
     "framer-motion": "^12.38.0",
+    "lucide-react": "^1.17.0",
     "next": "14.2.35",
     "node-telegram-bot-api": "^0.67.0",
     "openai": "^6.41.0",
+    "posthog-js": "^1.382.0",
     "react": "^18",
     "react-dom": "^18",
-    "resend": "^6.12.2"
+    "resend": "^6.12.2",
+    "tailwind-merge": "^3.6.0"
   },
   "devDependencies": {
     "@types/node": "^20",
