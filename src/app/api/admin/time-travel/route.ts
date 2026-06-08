@@ -15,8 +15,8 @@ export async function POST() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Extra safety: require +test email in production environments
-    if (process.env.NODE_ENV !== 'development' && !user.email?.includes('+test@')) {
+    // Extra safety: require +test email or specific test email in production environments
+    if (process.env.NODE_ENV !== 'development' && !user.email?.includes('+test@') && user.email !== 'testingevil0@gmail.com') {
       return NextResponse.json({ error: 'Not a test account' }, { status: 403 });
     }
 
