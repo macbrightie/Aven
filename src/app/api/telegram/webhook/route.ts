@@ -409,6 +409,7 @@ export async function POST(request: NextRequest) {
         }
       }
     }
+    return NextResponse.json({ ok: true });
   } catch (error) {
     console.error('[telegram/webhook] Error:', error);
     return NextResponse.json({ ok: true }); // Always 200 to Telegram
