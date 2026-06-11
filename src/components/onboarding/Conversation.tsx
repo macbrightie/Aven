@@ -22,7 +22,7 @@ export function Conversation() {
     {
       id: '2',
       role: 'assistant',
-      content: "What's the one thing you've been wanting to change or achieve, but hdeylon't found the right path for yet?",
+      content: "What's the one thing you've been wanting to change or achieve, but haven't found the right path for yet?",
     },
   ]);
   const [input, setInput] = useState('');

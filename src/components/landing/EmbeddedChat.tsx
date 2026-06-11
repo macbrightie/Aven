@@ -598,7 +598,7 @@ export function EmbeddedChat({
     {
       id: "m2",
       role: "deylon",
-      text: "What's the one thing you've been wanting to change or achieve, but hdeylon't found the right path for yet? Tell me freely.",
+      text: "What's the one thing you've been wanting to change or achieve, but haven't found the right path for yet? Tell me freely.",
     },
   ]);
   const [generating, setGenerating] = useState(false);

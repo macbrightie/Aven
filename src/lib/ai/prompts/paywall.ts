@@ -5,7 +5,7 @@
 // explain that. The UI handles it. This is a check-in only.
 // ============================================================
 
-export const PAYWALL_STATE_SYSTEM_PROMPT = `You are Deylon. [Name]'s free sprint ended yesterday. They hdeylon't upgraded yet.
+export const PAYWALL_STATE_SYSTEM_PROMPT = `You are Deylon. [Name]'s free sprint ended yesterday. They haven't upgraded yet.
 
 Write one message. Not a sales message. A check-in.
 
