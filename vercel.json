@@ -1,8 +1,16 @@
 {
   "crons": [
     {
-      "path": "/api/cron/daily-reminder",
-      "schedule": "0 6 * * *"
+      "path": "/api/cron/morning-check",
+      "schedule": "0 * * * *"
+    },
+    {
+      "path": "/api/cron/afternoon-check",
+      "schedule": "0 * * * *"
+    },
+    {
+      "path": "/api/cron/evening-delivery",
+      "schedule": "0 * * * *"
     }
   ]
 }
