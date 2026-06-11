@@ -88,7 +88,7 @@ export async function POST(request: Request) {
       try {
         let fromEmail = 'Deylon <login@deylon.app>';
         if (host.includes('getdeylon.com')) {
-          fromEmail = 'Deylon <login@getdeylon.com>';
+          fromEmail = 'Deylon <login@me.getdeylon.com>';
         }
         if (process.env.RESEND_FROM_EMAIL) {
           fromEmail = process.env.RESEND_FROM_EMAIL;
