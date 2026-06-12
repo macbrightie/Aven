@@ -49,15 +49,25 @@ interface DashboardNavProps {
   telegramConnected: boolean;
   onToggleTelegram: () => void;
   profilePhoto: string | null;
+  profileName: string;
 }
- 
+
 function DashboardNav({ 
   onOpenSettings, 
   onOpenProfile, 
   telegramConnected, 
   onToggleTelegram,
-  profilePhoto
+  profilePhoto,
+  profileName
 }: DashboardNavProps) {
+  const initials = (profileName || 'You')
+    .trim()
+    .split(/\s+/)
+    .map(part => part[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase() || 'Y';
+
   return (
     <nav className="w-full flex items-center justify-between px-3 md:px-8 py-4">
       {/* Logo */}
@@ -74,33 +84,30 @@ function DashboardNav({
           onClick={onToggleTelegram}
           className="h-9 inline-flex items-center gap-2 pl-3 pr-4 rounded-full border border-black/10 bg-white hover:bg-black/[0.02] active:scale-[0.98] transition-all select-none text-[#1a1a1a] font-sans font-medium text-[13px] shadow-sm cursor-pointer"
         >
-          {telegramConnected ? (
-            <>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="flex-shrink-0">
-                <circle cx="12" cy="12" r="12" fill="#24A1DE" />
-                <path d="M5.97927 11.8831L17.2023 6.94586C17.7214 6.70251 18.1751 7.07063 18.0063 7.8224L16.0959 16.8226C15.9525 17.466 15.5714 17.6256 15.0322 17.3228L12.122 15.1787L10.7183 16.5298C10.5627 16.6853 10.4326 16.8153 10.1324 16.8153L10.3413 13.8542L15.7317 8.97405C15.966 8.76516 15.6806 8.64936 15.3676 8.85769L8.70617 13.052L5.83445 12.1554C5.20967 11.9602 5.19799 11.5306 5.96497 11.2307L5.97927 11.8831Z" fill="white" />
-              </svg>
-              <span>Connected</span>
-            </>
-          ) : (
-            <>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="flex-shrink-0">
-                <circle cx="12" cy="12" r="12" fill="#9CA3AF" />
-                <path d="M5.97927 11.8831L17.2023 6.94586C17.7214 6.70251 18.1751 7.07063 18.0063 7.8224L16.0959 16.8226C15.9525 17.466 15.5714 17.6256 15.0322 17.3228L12.122 15.1787L10.7183 16.5298C10.5627 16.6853 10.4326 16.8153 10.1324 16.8153L10.3413 13.8542L15.7317 8.97405C15.966 8.76516 15.6806 8.64936 15.3676 8.85769L8.70617 13.052L5.83445 12.1554C5.20967 11.9602 5.19799 11.5306 5.96497 11.2307L5.97927 11.8831Z" fill="white" />
-              </svg>
-              <span>Connect telegram</span>
-            </>
-          )}
+          <svg 
+            width="14" 
+            height="14" 
+            viewBox="0 0 24 24" 
+            fill="none" 
+            stroke="currentColor" 
+            strokeWidth="2.2" 
+            strokeLinecap="round" 
+            strokeLinejoin="round"
+            className={telegramConnected ? "text-[#104D3B]" : "text-black/40"}
+          >
+            <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" />
+          </svg>
+          <span className="font-sans">{telegramConnected ? "Connected" : "Telegram"}</span>
         </button>
-
-        <button 
+        {/* Settings button */}
+        <button
           onClick={onOpenSettings}
-          className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-black/5 transition-colors"
+          className="w-9 h-9 flex items-center justify-center rounded-full border border-black/10 bg-white hover:bg-black/[0.02] active:scale-[0.98] transition-all cursor-pointer shadow-sm text-black/55"
           title="Settings"
         >
           <LeadIcon />
         </button>
-        {/* Avatar with green online dot */}
+        {/* Avatar with initials fallback */}
         <div 
           onClick={onOpenProfile}
           className="relative cursor-pointer hover:opacity-90 active:scale-95 transition-all"
@@ -114,13 +121,9 @@ function DashboardNav({
                 className="w-full h-full object-cover"
               />
             ) : (
-              <Image
-                src="/UI-design-and-element/BRIGHT MBA AVI 2 1.png"
-                alt="Profile"
-                width={36}
-                height={36}
-                className="w-full h-full object-cover"
-              />
+              <span className="text-white text-[12px] font-sans font-semibold tracking-wider">
+                {initials}
+              </span>
             )}
           </div>
           <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-[#104d3b] border-2 border-white" />
@@ -1589,6 +1592,28 @@ function SettingsModal({
                   )}
                 </div>
               </div>
+
+              {/* Danger Zone: Reset Account */}
+              <div className="mt-8 pt-6 border-t border-black/5 flex flex-col gap-3 select-none text-left">
+                <span className="font-sans font-medium text-[14.5px] text-red-600">
+                  Danger Zone
+                </span>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mt-1">
+                  <p className="text-[12px] text-foreground/50 font-sans max-w-[420px] leading-normal">
+                    Permanently delete your current plan, daily tasks, streaks, and reset your chat progress.
+                  </p>
+                  <Button
+                    variant="destructive"
+                    onClick={async () => {
+                      onClose();
+                      await onResetAccount();
+                    }}
+                    className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-[12px] text-[13px] font-sans font-medium cursor-pointer shadow-sm self-start sm:self-auto"
+                  >
+                    Reset Account
+                  </Button>
+                </div>
+              </div>
             </TabsContent>
           </div>
         </Tabs>
@@ -1913,15 +1938,19 @@ export default function DashboardPage() {
       // Always persist to localStorage first so refresh always restores the correct name
       localStorage.setItem(`deylon_display_name_${user.id}`, name);
       localStorage.setItem(`deylon_username_${user.id}`, username);
+      if (photo) {
+        localStorage.setItem(`deylon_avatar_${user.id}`, photo);
+      }
       console.log('[DEBUG-save] Saved to localStorage for user:', user.id);
 
       const supabase = createClient();
       try {
-        // 1. Update auth metadata so it is guaranteed to persist in Supabase Auth DB
+        // 1. Update auth metadata so it is guaranteed to persist in Supabase Auth DB (including avatar photo)
         const authRes = await supabase.auth.updateUser({
           data: {
             display_name: name,
-            username: username
+            username: username,
+            avatar: photo
           }
         });
         console.log('[DEBUG-save] auth update result:', authRes);
@@ -2129,12 +2158,9 @@ export default function DashboardPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center font-sans text-[#1a1a1a]">
-        <div className="flex flex-col items-center gap-3">
-          <svg className="animate-spin w-8 h-8 text-[#104d3b]" viewBox="0 0 24 24" fill="none">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
-          </svg>
-          <span className="text-[14px] font-medium tracking-wide">Syncing Deylon Dashboard...</span>
+        <div className="flex flex-col items-center gap-5">
+          <span className="loader"></span>
+          <span className="text-[14px] font-medium tracking-wide mt-2">Syncing Deylon Dashboard...</span>
         </div>
       </div>
     );
@@ -2150,6 +2176,7 @@ export default function DashboardPage() {
           telegramConnected={telegramConnected}
           onToggleTelegram={handleToggleTelegram}
           profilePhoto={profilePhoto}
+          profileName={profileName}
         />
 
         <main className="flex-1 px-3 md:px-8 pb-10 flex flex-col items-center justify-center">
@@ -2250,6 +2277,7 @@ export default function DashboardPage() {
         telegramConnected={telegramConnected}
         onToggleTelegram={handleToggleTelegram}
         profilePhoto={profilePhoto}
+        profileName={profileName}
       />
 
       <main className="flex-1 px-3 md:px-8 pb-10">

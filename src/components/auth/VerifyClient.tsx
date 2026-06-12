@@ -182,12 +182,9 @@ export function VerifyClient() {
   return (
     <div className="text-center space-y-6 px-6 animate-in fade-in duration-300">
       {status === 'verifying' && (
-        <div className="space-y-4">
-          <div className="flex justify-center mb-6">
-            <svg className="animate-spin w-10 h-10 text-[#104d3b]" viewBox="0 0 24 24" fill="none">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
-            </svg>
+        <div className="space-y-6 flex flex-col items-center">
+          <div className="flex justify-center mb-2">
+            <span className="loader"></span>
           </div>
           <h1 className="text-2xl font-sans font-medium text-[#1a1a1a] tracking-tight">
             Verifying your link…
