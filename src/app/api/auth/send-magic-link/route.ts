@@ -51,13 +51,33 @@ export async function POST(request: Request) {
           content: m.content || m.text || '',
         }));
 
+        let extractedProfile = null;
+        const lastAssistantMsg = [...messages]
+          .reverse()
+          .find((m: any) => {
+            const content = m.content || m.text || '';
+            return content.includes('[PROFILE_READY]');
+          });
+        if (lastAssistantMsg) {
+          const content = lastAssistantMsg.content || lastAssistantMsg.text || '';
+          const match = content.match(/\[PROFILE_READY\]([\s\S]*?)\[\/PROFILE_READY\]/);
+          if (match) {
+            try {
+              extractedProfile = JSON.parse(match[1].trim());
+            } catch (e) {
+              console.error('[SendMagicLink] Failed to parse [PROFILE_READY] JSON:', e);
+            }
+          }
+        }
+
         console.log(`[Send Magic Link] Saving completed onboarding conversation for user ${user.id} (${email})...`);
         const { error: convError } = await supabase
           .from('conversations')
           .insert({
             user_id: user.id,
             messages: payloadMessages,
-            completed: true
+            completed: true,
+            extracted_profile: extractedProfile
           });
 
         if (convError) {

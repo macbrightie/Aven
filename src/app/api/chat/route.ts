@@ -152,6 +152,18 @@ export async function POST(request: NextRequest) {
           { role: 'assistant', content: assistantMessage },
         ];
 
+        let extractedProfile = null;
+        if (complete) {
+          const match = assistantMessage.match(/\[PROFILE_READY\]([\s\S]*?)\[\/PROFILE_READY\]/);
+          if (match) {
+            try {
+              extractedProfile = JSON.parse(match[1].trim());
+            } catch (e) {
+              console.error('[chat/route] Failed to parse [PROFILE_READY] JSON:', e);
+            }
+          }
+        }
+
         await supabase
           .from('conversations')
           .upsert({
@@ -159,6 +171,7 @@ export async function POST(request: NextRequest) {
             user_id: user.id,
             messages: updatedMessages,
             completed: complete,
+            extracted_profile: extractedProfile
           })
           .eq('id', conversationId);
       }

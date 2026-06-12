@@ -34,12 +34,34 @@ export function VerifyClient() {
             content: m.content || m.text || '',
           }));
 
+          let extractedProfile = null;
+          if (onboardingCompleted) {
+            const lastAssistantMsg = [...rawMessages]
+              .reverse()
+              .find((m) => {
+                const content = m.content || m.text || '';
+                return content.includes('[PROFILE_READY]');
+              });
+            if (lastAssistantMsg) {
+              const content = lastAssistantMsg.content || lastAssistantMsg.text || '';
+              const match = content.match(/\[PROFILE_READY\]([\s\S]*?)\[\/PROFILE_READY\]/);
+              if (match) {
+                try {
+                  extractedProfile = JSON.parse(match[1].trim());
+                } catch (e) {
+                  console.error('[VerifyClient] Failed to parse [PROFILE_READY] JSON:', e);
+                }
+              }
+            }
+          }
+
           const { data: conv, error: convError } = await supabase
             .from('conversations')
             .insert({
               user_id: user.id,
               messages: payloadMessages,
-              completed: onboardingCompleted
+              completed: onboardingCompleted,
+              extracted_profile: extractedProfile
             })
             .select()
             .single();

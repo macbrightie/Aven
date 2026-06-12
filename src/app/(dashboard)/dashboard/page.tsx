@@ -23,6 +23,24 @@ const mapDbMessagesToChat = (dbMessages: any[]): any[] => {
     metadata: m.metadata || undefined,
   }));
 };
+
+function calculateLongestStreak(cards: any[]): number {
+  if (!cards || cards.length === 0) return 0;
+  const sorted = [...cards].sort((a, b) => a.day_number - b.day_number);
+  let maxStreak = 0;
+  let currentStreak = 0;
+  for (const card of sorted) {
+    if (card.status === 'done') {
+      currentStreak++;
+      if (currentStreak > maxStreak) {
+        maxStreak = currentStreak;
+      }
+    } else {
+      currentStreak = 0;
+    }
+  }
+  return maxStreak;
+}
  
 type ViewMode = 'Grid' | 'Swipe';
  
@@ -230,9 +248,10 @@ interface FlashCardProps {
   dayNumber?: number;
   taskText: string;
   status: 'pending' | 'done' | 'adjusted' | 'partial';
+  checkedStatesFromDb?: boolean[];
   isDate?: boolean;
   label?: string;
-  onStatusChange?: (cardId: string, status: 'pending' | 'done' | 'adjusted' | 'partial') => Promise<void>;
+  onStatusChange?: (cardId: string, status: 'pending' | 'done' | 'adjusted' | 'partial', checkedStates: boolean[]) => Promise<void>;
   langKey?: string;
 }
 
@@ -242,6 +261,7 @@ function FlashCard({
   dayNumber, 
   taskText, 
   status, 
+  checkedStatesFromDb,
   isDate = false, 
   label, 
   onStatusChange,
@@ -262,20 +282,14 @@ function FlashCard({
   const [checkedStates, setCheckedStates] = useState<boolean[]>([]);
 
   useEffect(() => {
-    if (status === 'done') {
+    if (checkedStatesFromDb && checkedStatesFromDb.length === sentences.length) {
+      setCheckedStates(checkedStatesFromDb);
+    } else if (status === 'done') {
       setCheckedStates(new Array(sentences.length).fill(true));
     } else {
-      setCheckedStates((prev) => {
-        if (prev.length !== sentences.length) {
-          return new Array(sentences.length).fill(false);
-        }
-        if (prev.every(Boolean)) {
-          return new Array(sentences.length).fill(false);
-        }
-        return prev;
-      });
+      setCheckedStates(new Array(sentences.length).fill(false));
     }
-  }, [status, taskText, sentences.length]);
+  }, [status, taskText, sentences.length, checkedStatesFromDb]);
 
   const toggleTask = async (idx: number, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -284,10 +298,11 @@ function FlashCard({
     setCheckedStates(newStates);
 
     const allChecked = newStates.every(Boolean);
-    const newStatus = allChecked ? 'done' : 'pending';
+    const anyChecked = newStates.some(Boolean);
+    const newStatus = allChecked ? 'done' : (anyChecked ? 'partial' : 'pending');
 
     if (cardId && onStatusChange) {
-      await onStatusChange(cardId, newStatus);
+      await onStatusChange(cardId, newStatus, newStates);
     }
   };
 
@@ -618,20 +633,52 @@ function HabitGrid({
                 {Array.from({ length: 52 }).map((_, ci) => {
                   const dayNum = ci * 7 + di + 1;
                   
-                  let active = false;
-                  if (filter === 'overall') {
-                    active = dayNum <= 21 && dailyCards.find((c) => c.day_number === dayNum)?.status === 'done';
-                  } else {
-                    if (selectedHabitIndex === null) {
-                      active = false;
-                    } else if (selectedHabitIndex === 0) {
-                      active = dayNum <= 21 && (dayNum % 7 !== 0);
-                    } else if (selectedHabitIndex === 1) {
-                      active = dayNum <= 21 && (dayNum % 7 === 2 || dayNum % 7 === 5);
-                    } else if (selectedHabitIndex === 2) {
-                      active = dayNum <= 21 && (dayNum % 7 === 1 || dayNum % 7 === 3 || dayNum % 7 === 6);
+                  let bgColor = 'rgba(255,255,255,0.04)';
+                  if (dayNum <= 21) {
+                    const card = dailyCards.find((c) => c.day_number === dayNum);
+                    if (card) {
+                      if (filter === 'overall') {
+                        const sentences = card.task
+                          ? card.task
+                              .split(/(?<=[.!?])\s+/)
+                              .map((s: any) => s.trim())
+                              .filter((s: any) => s.length > 2)
+                          : [];
+                        
+                        const checkedStates = card.checked_states || [];
+                        const checkedCount = checkedStates.filter(Boolean).length;
+                        
+                        if (card.status === 'done') {
+                          bgColor = '#1559EF';
+                        } else if (checkedCount > 0 && sentences.length > 0) {
+                          const percent = checkedCount / sentences.length;
+                          let opacity = 0.15;
+                          if (percent >= 0.6) {
+                            opacity = 0.7;
+                          } else if (percent >= 0.3) {
+                            opacity = 0.4;
+                          }
+                          bgColor = `rgba(21, 89, 239, ${opacity})`;
+                        } else {
+                          bgColor = 'rgba(255,255,255,0.15)';
+                        }
+                      } else {
+                        let active = false;
+                        if (selectedHabitIndex === null) {
+                          active = false;
+                        } else if (selectedHabitIndex === 0) {
+                          active = dayNum <= 21 && (dayNum % 7 !== 0);
+                        } else if (selectedHabitIndex === 1) {
+                          active = dayNum <= 21 && (dayNum % 7 === 2 || dayNum % 7 === 5);
+                        } else if (selectedHabitIndex === 2) {
+                          active = dayNum <= 21 && (dayNum % 7 === 1 || dayNum % 7 === 3 || dayNum % 7 === 6);
+                        } else {
+                          active = dayNum <= 21 && (dayNum % 2 !== 0);
+                        }
+                        bgColor = active ? '#104D3B' : 'rgba(255,255,255,0.15)';
+                      }
                     } else {
-                      active = dayNum <= 21 && (dayNum % 2 !== 0);
+                      bgColor = 'rgba(255,255,255,0.04)';
                     }
                   }
 
@@ -643,9 +690,7 @@ function HabitGrid({
                       }`}
                       title={dayNum <= 21 ? `Day ${dayNum} Move` : undefined}
                       style={{
-                        background: active 
-                          ? (filter === 'overall' ? '#1559EF' : '#104D3B') 
-                          : (dayNum <= 21 ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.04)')
+                        background: bgColor
                       }}
                     />
                   );
@@ -774,20 +819,22 @@ interface UpdateGoalsDrawerProps {
   onClose: () => void;
   supportingGoals: string[];
   primaryGoal: string;
-  onSaveGoals: (primary: string, supporting: string[]) => Promise<void>;
+  completedGoals: string[];
+  onSaveGoals: (primary: string, supporting: string[], completed: string[]) => Promise<void>;
 }
 
-function UpdateGoalsDrawer({ isOpen, onClose, supportingGoals, primaryGoal, onSaveGoals }: UpdateGoalsDrawerProps) {
+function UpdateGoalsDrawer({ isOpen, onClose, supportingGoals, primaryGoal, completedGoals, onSaveGoals }: UpdateGoalsDrawerProps) {
   const [tempPrimary, setTempPrimary] = useState(primaryGoal);
   const [tempSupporting, setTempSupporting] = useState<string[]>(supportingGoals || []);
   const [newGoalText, setNewGoalText] = useState('');
-  const [completedGoals, setCompletedGoals] = useState<string[]>([]);
+  const [tempCompleted, setTempCompleted] = useState<string[]>(completedGoals || []);
   const [showConfetti, setShowConfetti] = useState(false);
 
   useEffect(() => {
     setTempPrimary(primaryGoal);
     setTempSupporting(supportingGoals || []);
-  }, [isOpen, primaryGoal, supportingGoals]);
+    setTempCompleted(completedGoals || []);
+  }, [isOpen, primaryGoal, supportingGoals, completedGoals]);
 
   const handleAddGoal = (e: React.FormEvent) => {
     e.preventDefault();
@@ -801,17 +848,17 @@ function UpdateGoalsDrawer({ isOpen, onClose, supportingGoals, primaryGoal, onSa
   };
 
   const toggleGoalCompleted = (goal: string) => {
-    if (completedGoals.includes(goal)) {
-      setCompletedGoals(completedGoals.filter(g => g !== goal));
+    if (tempCompleted.includes(goal)) {
+      setTempCompleted(tempCompleted.filter(g => g !== goal));
     } else {
-      setCompletedGoals([...completedGoals, goal]);
+      setTempCompleted([...tempCompleted, goal]);
       setShowConfetti(true);
       setTimeout(() => setShowConfetti(false), 2000);
     }
   };
 
   const handleSave = () => {
-    onSaveGoals(tempPrimary, tempSupporting);
+    onSaveGoals(tempPrimary, tempSupporting, tempCompleted);
     onClose();
   };
 
@@ -846,7 +893,7 @@ function UpdateGoalsDrawer({ isOpen, onClose, supportingGoals, primaryGoal, onSa
             <Label className="mb-3">Supporting Goals Checklist</Label>
             <div className="overflow-y-auto space-y-2.5 pr-1" style={{ maxHeight: '260px' }}>
               {tempSupporting.map((goal, index) => {
-                const isCompleted = completedGoals.includes(goal);
+                const isCompleted = tempCompleted.includes(goal);
                 return (
                   <div
                     key={index}
@@ -1727,6 +1774,7 @@ export default function DashboardPage() {
   const [plan, setPlan] = useState<any>(null);
   const [cards, setCards] = useState<any[]>([]);
   const [activeDay, setActiveDay] = useState(1);
+  const [completedGoals, setCompletedGoals] = useState<string[]>([]);
   const [stats, setStats] = useState({
     goalsPending: 0,
     longestStreak: 0,
@@ -1816,6 +1864,8 @@ export default function DashboardPage() {
           .limit(1)
           .maybeSingle();
 
+        let dailyCardsList: any[] = [];
+
         if (activePlan) {
           setPlan(activePlan);
 
@@ -1828,6 +1878,7 @@ export default function DashboardPage() {
             .order('day_number', { ascending: true });
 
           if (dailyCards && dailyCards.length > 0) {
+            dailyCardsList = dailyCards;
             setCards(dailyCards);
 
             const pendingCard = dailyCards.find((c) => c.status === 'pending');
@@ -1902,17 +1953,14 @@ export default function DashboardPage() {
         }
 
         // 4. Fetch metrics
-        const { data: sprintProgress } = await supabase
-          .from('sprint_progress')
-          .select('*')
-          .eq('user_id', authUser.id)
-          .eq('status', 'done');
+        const compGoals = activePlan?.plan_data?.completed_goals || [];
+        setCompletedGoals(compGoals);
 
         const supportingGoalsLength = activePlan?.plan_data?.supporting_goals?.length || 0;
 
         setStats({
-          longestStreak: sprintProgress ? sprintProgress.length : 0,
-          goalsPending: supportingGoalsLength + 1,
+          longestStreak: calculateLongestStreak(dailyCardsList),
+          goalsPending: (supportingGoalsLength + 1) - compGoals.length,
           dreamDuration: activePlan?.timeline_months || (activePlan?.timeline_years ? activePlan.timeline_years * 12 : 60),
         });
 
@@ -2000,14 +2048,15 @@ export default function DashboardPage() {
     }
   };
 
-  const handleSaveGoals = async (primary: string, supporting: string[]) => {
+  const handleSaveGoals = async (primary: string, supporting: string[], completed: string[]) => {
     if (!plan || !user) return;
     const supabase = createClient();
     try {
       const updatedPlanData = {
         ...plan.plan_data,
         primary_goal: primary,
-        supporting_goals: supporting
+        supporting_goals: supporting,
+        completed_goals: completed
       };
 
       const { error } = await supabase
@@ -2026,9 +2075,11 @@ export default function DashboardPage() {
         plan_data: updatedPlanData
       });
 
+      setCompletedGoals(completed);
+
       setStats((prev) => ({
         ...prev,
-        goalsPending: supporting.length + 1
+        goalsPending: (supporting.length + 1) - completed.length
       }));
     } catch (err) {
       console.error('[Save Goals Error]:', err);
@@ -2094,22 +2145,32 @@ export default function DashboardPage() {
     }
   };
 
-  const handleStatusChange = async (cardId: string, newStatus: 'pending' | 'done' | 'adjusted' | 'partial') => {
+  const handleStatusChange = async (
+    cardId: string, 
+    newStatus: 'pending' | 'done' | 'adjusted' | 'partial',
+    checkedStates: boolean[]
+  ) => {
     const supabase = createClient();
     try {
       const { error } = await supabase
         .from('daily_cards')
         .update({ 
           status: newStatus,
-          completed_at: newStatus === 'done' ? new Date().toISOString() : null
+          completed_at: newStatus === 'done' ? new Date().toISOString() : null,
+          checked_states: checkedStates
         })
         .eq('id', cardId);
 
       if (error) throw error;
 
-      setCards((prev) =>
-        prev.map((c) => (c.id === cardId ? { ...c, status: newStatus } : c))
-      );
+      setCards((prev) => {
+        const updated = prev.map((c) => (c.id === cardId ? { ...c, status: newStatus, checked_states: checkedStates } : c));
+        setStats((s) => ({
+          ...s,
+          longestStreak: calculateLongestStreak(updated)
+        }));
+        return updated;
+      });
     } catch (err) {
       console.error('[handleStatusChange Error]:', err);
     }
@@ -2375,6 +2436,7 @@ export default function DashboardPage() {
                   dayNumber={dayNum}
                   taskText={card?.task ?? "Relax and reflect on your goal."}
                   status={card?.status ?? 'pending'}
+                  checkedStatesFromDb={card?.checked_states}
                   label={`Day ${dayNum} Move`}
                   onStatusChange={handleStatusChange}
                   langKey={langKey}
@@ -2522,6 +2584,7 @@ export default function DashboardPage() {
         onClose={() => setShowGoalsDrawer(false)}
         supportingGoals={plan?.plan_data?.supporting_goals || []}
         primaryGoal={plan?.primary_goal || ""}
+        completedGoals={completedGoals}
         onSaveGoals={handleSaveGoals}
       />
 

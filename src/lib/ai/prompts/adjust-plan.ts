@@ -13,7 +13,7 @@ CRITICAL RULES:
 5. You MUST generate daily tasks for ALL remaining days from the start day up to Day 21. Do not skip any days, and do not truncate the list with placeholders.
 6. The output must be valid JSON matching the schema below.
 
-RETURN ONLY VALID JSON — no preamble, no explanation, no markdown code blocks:
+RETURN ONLY VALID JSON - no preamble, no explanation, no markdown code blocks:
 
 {
   "motivational_anchor": "One sentence in second person - updated to reflect their adjustments if needed",
