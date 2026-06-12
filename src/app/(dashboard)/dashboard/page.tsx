@@ -2382,43 +2382,46 @@ export default function DashboardPage() {
         </div>
 
         {/* ── Bottom Two Columns ── */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 items-start">
 
-          {/* Left column */}
-          <div className="flex flex-col gap-4">
+          {/* Map Banner and Stats (Desktop: Column 1, Row 1) */}
+          <div className="flex flex-col gap-4 md:col-start-1 md:row-start-1">
             <MapBanner onClick={() => setShowRoadmap(true)} />
             <div className="flex flex-col md:grid md:grid-cols-3 gap-3">
               <StatCard value={stats.goalsPending.toString()} label={t('goals_pending', langKey)} accent />
               <StatCard value={stats.longestStreak.toString()} unit="DAYS" label={t('longest_streak', langKey)} />
               <StatCard value={stats.dreamDuration.toString()} unit="MONTHS" label={t('dream_duration', langKey)} />
             </div>
-            {/* Upgrade to Pro */}
-            <div className="rounded-[20px] bg-[#1a1a1a] p-6 flex flex-col justify-between min-h-[130px]">
-              <h3 className="text-white font-sans text-[28px] font-light leading-tight tracking-tight">
-                {t('upgrade_pro', langKey)}
-              </h3>
-              <div className="mt-5">
-                <Link
-                  href="/pro"
-                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-[8px] bg-white/10 border border-white/10 text-white text-[12px] font-sans hover:bg-white/15 transition-colors"
-                >
-                  {t('upgrade_plan', langKey) || 'Upgrade plan'}
-                  <svg width="12" height="12" viewBox="0 0 20 20" fill="none">
-                    <path d="M4 10h12M10 4l6 6-6 6" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                </Link>
-              </div>
-            </div>
           </div>
 
-          {/* Right column — habit grid fills full height */}
-          <HabitGrid 
-            dailyCards={cards} 
-            filter={habitFilter} 
-            onFilterChange={setHabitFilter}
-            habits={plan?.plan_data?.habits || []}
-            langKey={langKey}
-          />
+          {/* HabitGrid / Habit Activity Calendar (Desktop: Column 2, Rows 1-2; Mobile: Stacks under stats, above upgrade card) */}
+          <div className="md:col-start-2 md:row-start-1 md:row-span-2">
+            <HabitGrid 
+              dailyCards={cards} 
+              filter={habitFilter} 
+              onFilterChange={setHabitFilter}
+              habits={plan?.plan_data?.habits || []}
+              langKey={langKey}
+            />
+          </div>
+
+          {/* Upgrade to Pro (Desktop: Column 1, Row 2; Mobile: Stacks at the very bottom) */}
+          <div className="md:col-start-1 md:row-start-2 rounded-[20px] bg-[#1a1a1a] p-6 flex flex-col justify-between min-h-[130px]">
+            <h3 className="text-white font-sans text-[28px] font-light leading-tight tracking-tight">
+              {t('upgrade_pro', langKey)}
+            </h3>
+            <div className="mt-5">
+              <Link
+                href="/pro"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-[8px] bg-white/10 border border-white/10 text-white text-[12px] font-sans hover:bg-white/15 transition-colors"
+              >
+                {t('upgrade_plan', langKey) || 'Upgrade plan'}
+                <svg width="12" height="12" viewBox="0 0 20 20" fill="none">
+                  <path d="M4 10h12M10 4l6 6-6 6" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </Link>
+            </div>
+          </div>
         </div>
       </main>
 
