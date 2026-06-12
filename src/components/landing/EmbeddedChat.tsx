@@ -677,6 +677,7 @@ export function EmbeddedChat({
           }, 2000);
         } else {
           localStorage.setItem("deylon_onboarding_transcript", JSON.stringify(finalMessages));
+          localStorage.setItem("deylon_onboarding_completed", "true");
           setTimeout(() => {
             setChatState("email");
           }, 2500); // Elegant delay so the user can digest the final Deylon onboarding message

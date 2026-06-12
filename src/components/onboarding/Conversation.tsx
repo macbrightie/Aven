@@ -88,6 +88,7 @@ export function Conversation() {
       // If onboarding profile is complete, save transcript to cache and switch to email capture step
       if (data.complete) {
         localStorage.setItem("deylon_onboarding_transcript", JSON.stringify(newMessages.concat(assistantMsg)));
+        localStorage.setItem("deylon_onboarding_completed", "true");
         setTimeout(() => {
           setStep('email');
         }, 2500); // 2.5 second delay so they can read Deylon's final complete sign-off message

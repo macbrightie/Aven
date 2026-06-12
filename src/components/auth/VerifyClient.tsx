@@ -24,6 +24,7 @@ export function VerifyClient() {
 
       const user = session.user;
       const transcript = localStorage.getItem("deylon_onboarding_transcript");
+      const onboardingCompleted = localStorage.getItem("deylon_onboarding_completed") === "true";
 
       if (transcript && user) {
         try {
@@ -38,16 +39,23 @@ export function VerifyClient() {
             .insert({
               user_id: user.id,
               messages: payloadMessages,
-              completed: true
+              completed: onboardingCompleted
             })
             .select()
             .single();
 
           if (!convError && conv) {
             localStorage.removeItem("deylon_onboarding_transcript");
+            localStorage.removeItem("deylon_onboarding_completed");
             if (isMounted) setStatus('success');
             setTimeout(() => {
-              if (isMounted) router.push(`/building?conversationId=${conv.id}`);
+              if (isMounted) {
+                if (onboardingCompleted) {
+                  router.push(`/building?conversationId=${conv.id}`);
+                } else {
+                  router.push('/dashboard');
+                }
+              }
             }, 1500);
             return;
           } else {

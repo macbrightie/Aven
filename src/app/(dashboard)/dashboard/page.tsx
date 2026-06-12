@@ -59,7 +59,7 @@ function DashboardNav({
   profilePhoto
 }: DashboardNavProps) {
   return (
-    <nav className="w-full flex items-center justify-between px-6 md:px-8 py-4">
+    <nav className="w-full flex items-center justify-between px-3 md:px-8 py-4">
       {/* Logo */}
       <Link href="/" className="flex items-center gap-2">
         <div className="w-6 h-6 rounded-full bg-[#104d3b] flex items-center justify-center">
@@ -2152,7 +2152,7 @@ export default function DashboardPage() {
           profilePhoto={profilePhoto}
         />
 
-        <main className="flex-1 px-6 md:px-8 pb-10 flex flex-col items-center justify-center">
+        <main className="flex-1 px-3 md:px-8 pb-10 flex flex-col items-center justify-center">
           <div className="max-w-[960px] w-full mx-auto mt-6 flex-1 flex flex-col justify-center">
             <div className="text-center mb-10">
               <h1 className="font-sans text-[24px] md:text-[32px] font-medium text-[#1a1a1a] tracking-tight">
@@ -2175,7 +2175,7 @@ export default function DashboardPage() {
           </div>
         </main>
 
-        <footer className="px-6 md:px-8 py-5 flex items-center justify-between text-[11px] font-sans text-[#1a1a1a]/30 border-t border-black/5">
+        <footer className="px-3 md:px-8 py-5 flex items-center justify-between text-[11px] font-sans text-[#1a1a1a]/30 border-t border-black/5">
           <div className="flex items-center gap-4">
             <span className="font-sans">© Deylon 2026</span>
             <span className="text-[#1a1a1a]/15">·</span>
@@ -2252,7 +2252,7 @@ export default function DashboardPage() {
         profilePhoto={profilePhoto}
       />
 
-      <main className="flex-1 px-6 md:px-8 pb-10">
+      <main className="flex-1 px-3 md:px-8 pb-10">
         <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-5 mt-2 mb-7">
           <div>
             <h1 className="font-sans text-[36px] md:text-[48px] leading-tight text-[#1a1a1a] tracking-[-0.03em]">
@@ -2426,7 +2426,7 @@ export default function DashboardPage() {
       </main>
 
       {/* ── Footer ── */}
-      <footer className="px-6 md:px-8 py-5 flex items-center justify-between text-[11px] font-sans text-[#1a1a1a]/30 border-t border-black/5">
+      <footer className="px-3 md:px-8 py-5 flex items-center justify-between text-[11px] font-sans text-[#1a1a1a]/30 border-t border-black/5">
         <div className="flex items-center gap-4">
           <span className="font-sans">© Deylon 2026</span>
           <span className="text-[#1a1a1a]/15">·</span>
