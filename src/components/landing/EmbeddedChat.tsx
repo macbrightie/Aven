@@ -236,7 +236,7 @@ function ChatMessage({ message, onUpdateMetadata }: ChatMessageProps) {
       className="space-y-1 text-left"
     >
       <p
-        className={`text-[11px] font-sans font-semibold tracking-wide mb-1 ${
+        className={`text-[13px] font-sans font-semibold tracking-wide mb-1 ${
           isDeylon ? "text-[#1a1a1a]" : "text-[#104d3b]"
         }`}
       >
@@ -248,7 +248,7 @@ function ChatMessage({ message, onUpdateMetadata }: ChatMessageProps) {
             isDeylon ? "bg-[#1a1a1a]/35" : "bg-[#104d3b]"
           }`}
         />
-        <p className="text-[13px] md:text-[14px] text-[#1a1a1a] font-sans leading-relaxed">
+        <p className="text-[15px] md:text-[16px] text-[#1a1a1a] font-sans leading-relaxed">
           {message.text}
         </p>
       </div>
@@ -305,6 +305,17 @@ function ChatPanel({
     }
   }
 
+  function handleFocus() {
+    setTimeout(() => {
+      if (scrollContainerRef.current) {
+        scrollContainerRef.current.scrollTo({
+          top: scrollContainerRef.current.scrollHeight,
+          behavior: "smooth"
+        });
+      }
+    }, 150);
+  }
+
   return (
     <div className="flex flex-col h-full">
       {/* Messages — 60% width of container, centred */}
@@ -334,6 +345,7 @@ function ChatPanel({
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             onKeyDown={handleKeyDown}
+            onFocus={handleFocus}
             disabled={generating}
             placeholder={
               generating 
@@ -341,7 +353,7 @@ function ChatPanel({
                 : (isListening ? "Listening..." : "Reply...")
             }
             rows={2}
-            className="w-full pl-4 pr-4 pt-3.5 pb-0 text-[14px] font-sans text-[#1a1a1a] placeholder:text-[#1a1a1a]/30 bg-white resize-none outline-none leading-normal disabled:bg-gray-50/50"
+            className="w-full pl-4 pr-4 pt-3.5 pb-0 text-[16px] font-sans text-[#1a1a1a] placeholder:text-[#1a1a1a]/30 bg-white resize-none outline-none leading-normal disabled:bg-gray-50/50"
           />
 
           {/* Bottom Button Bar Zone */}
@@ -594,13 +606,8 @@ export function EmbeddedChat({
       {
         id: "m1",
         role: "deylon",
-        text: "Hi, I'm Deylon. I'm here to help you turn your biggest goals into a daily reality.",
-      },
-      {
-        id: "m2",
-        role: "deylon",
-        text: "What's the one thing you've been wanting to change or achieve, but haven't found the right path for yet? Tell me freely.",
-      },
+        text: "Hi, I'm Deylon. I'll help you turn your goals into daily habits. What's one goal you'd love to achieve?",
+      }
     ]
   );
   const [generating, setGenerating] = useState(false);
@@ -807,7 +814,7 @@ export function EmbeddedChat({
       </div>
 
       {/* Inner white chat card */}
-      <div className="mx-[2px] mb-[2px] rounded-b-[26px] rounded-t-[20px] bg-white overflow-hidden h-[450px] md:h-[500px] flex flex-col">
+      <div className="mx-[2px] mb-[2px] rounded-b-[26px] rounded-t-[20px] bg-white overflow-hidden h-[400px] sm:h-[450px] md:h-[500px] flex flex-col">
         <AnimatePresence mode="wait">
           {generatingPlan ? (
             <motion.div

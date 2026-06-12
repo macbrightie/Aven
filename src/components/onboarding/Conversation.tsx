@@ -17,12 +17,7 @@ export function Conversation() {
     {
       id: '1',
       role: 'assistant',
-      content: "Hi, I'm Deylon. I'm here to help you turn your biggest goals into a daily reality.",
-    },
-    {
-      id: '2',
-      role: 'assistant',
-      content: "What's the one thing you've been wanting to change or achieve, but haven't found the right path for yet?",
+      content: "Hi, I'm Deylon. I'll help you turn your goals into daily habits. What's one goal you'd love to achieve?",
     },
   ]);
   const [input, setInput] = useState('');
@@ -38,6 +33,14 @@ export function Conversation() {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages, loading]);
+
+  const handleFocus = () => {
+    setTimeout(() => {
+      if (scrollRef.current) {
+        scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+      }
+    }, 150);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -130,7 +133,7 @@ export function Conversation() {
   };
 
   return (
-    <div className="w-full max-w-2xl mx-auto flex flex-col h-[600px] bg-white rounded-[2.5rem] border border-border/50 shadow-2xl shadow-black/5 overflow-hidden">
+    <div className="w-full max-w-2xl mx-auto flex flex-col h-[460px] sm:h-[520px] md:h-[600px] bg-white rounded-[2.5rem] border border-border/50 shadow-2xl shadow-black/5 overflow-hidden">
       {step === 'chat' && (
         <>
           {/* Messages */}
@@ -144,7 +147,7 @@ export function Conversation() {
                 className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
               >
                 <div 
-                  className={`max-w-[80%] px-6 py-4 rounded-[1.5rem] text-[16px] font-sans leading-relaxed ${
+                  className={`max-w-[80%] px-6 py-4 rounded-[1.5rem] text-[18px] font-sans leading-relaxed ${
                     msg.role === 'user' 
                     ? 'bg-black text-white rounded-br-sm' 
                     : 'bg-[#f3f4f6] text-[#1a1a1a] rounded-bl-sm'
@@ -174,9 +177,10 @@ export function Conversation() {
               <Input 
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
+                onFocus={handleFocus}
                 placeholder={loading ? "Deylon is writing..." : (isListening ? "Listening..." : "Type your answer here...")}
                 disabled={loading}
-                className="w-full h-14 rounded-[999px] border-border/50 bg-white pl-6 pr-14 font-sans text-[16px] focus-visible:ring-[#104d3b] disabled:bg-gray-100 disabled:opacity-60"
+                className="w-full h-14 rounded-[999px] border-border/50 bg-white pl-6 pr-14 font-sans text-[18px] focus-visible:ring-[#104d3b] disabled:bg-gray-100 disabled:opacity-60"
               />
               <div className="absolute right-3">
                 <VoiceInput
