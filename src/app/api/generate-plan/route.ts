@@ -2,6 +2,25 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { PlannerService } from '@/lib/ai/services/planner.service';
 
+function extractMonthsFromTimelineGoal(goalStr: string | undefined | null): number | null {
+  if (!goalStr) return null;
+  const clean = goalStr.toLowerCase().trim();
+  const numMatch = clean.match(/(\d+)/);
+  if (!numMatch) {
+    if (clean.includes('year')) {
+      const yrMatch = clean.match(/(\d+)\s*year/);
+      if (yrMatch) return parseInt(yrMatch[1], 10) * 12;
+      return 12;
+    }
+    return null;
+  }
+  const num = parseInt(numMatch[1], 10);
+  if (clean.includes('year') || clean.includes('yr')) {
+    return num * 12;
+  }
+  return num;
+}
+
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient();
@@ -43,7 +62,7 @@ export async function POST(request: NextRequest) {
       .map((m: any) => `${m.role.toUpperCase()}: ${m.content}`)
       .join('\n\n');
 
-    const profile = conversation.extracted_profile ?? {};
+    const profile = (conversation.extracted_profile ?? {}) as any;
 
     // Generate plan with Gemini
     const planData = await PlannerService.generatePlan(profile, transcript);
@@ -56,6 +75,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const parsedTimelineMonths = extractMonthsFromTimelineGoal(profile.timelineGoal);
+    const finalTimelineMonths = parsedTimelineMonths || planData.timeline_months || 12;
+    
+    // Sync JSON object
+    planData.timeline_months = finalTimelineMonths;
+
     // Save plan to database
     const { data: plan, error: planError } = await supabase
       .from('plans')
@@ -63,8 +88,8 @@ export async function POST(request: NextRequest) {
         user_id: user.id,
         plan_data: planData,
         primary_goal: planData.primary_goal,
-        timeline_months: planData.timeline_months || 12,
-        timeline_years: Math.ceil((planData.timeline_months || 12) / 12),
+        timeline_months: finalTimelineMonths,
+        timeline_years: Math.ceil(finalTimelineMonths / 12),
         version: 1,
       })
       .select()

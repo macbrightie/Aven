@@ -13,6 +13,16 @@ CRITICAL RULES:
 8. Every checklist sentence inside the 'task' field must follow a strict, deep, and actionable format: 'Action. (Example: [specific example/link/tool]). [Helper hint/clue].' For example: 'Look up French visa options. (Example: Passeport Talent website). Clue: check the salary threshold requirements first, as that is the most common blocker.'
 9. For each daily task, you MUST generate a field called 'social_chat_messages' which is a JSON array of 2 to 3 friendly, warm, conversational, and relatable chat message bubbles. Do NOT include any generic greetings like 'Greetings Dr. Bright' or 'Salut Bright' in the message text, as the greeting prefix is dynamically appended by the system. Keep them well-spaced and natural.
 10. You MUST generate EXACTLY 21 daily tasks in the 'daily_tasks' array, numbered sequentially from 1 to 21. Each day's tasks should fit the user's availability: on days they are available (e.g. Tuesdays/Fridays), give a structured set of multiple sentences totaling the hours they have. On days they are NOT available, generate light 5-10 minute micro-habits. Do not skip any days, and do not use placeholders or ellipsis in the output list. The array MUST contain exactly 21 items.
+11. Task Density (Tasks per Day): Adjust the checklist density inside the daily card \`task\` field based on the user's target intensity level and the number of goals:
+    - If intensity is "steady" and user has only 1 goal: Generate exactly 1 checkable primary task (Action. (Example: [specific example]). [Helper hint/clue].) per day.
+    - If intensity is "serious" or the user has multiple supporting goals: Compress the timeline and generate exactly 2 distinct checkable tasks (each formatted as its own Action-sentence with its optional Example and Hint/Clue) within that day's card.
+    - If intensity is "all-in": Generate exactly 3 distinct checkable tasks in that day's card.
+12. You MUST set the "timeline_months" field in the JSON output to match the user's timelineGoal preference (converting years to months, e.g. "1 year" -> 12, "9 months" -> 9). If unspecified, default to 12.
+13. You MUST generate exactly 4 milestones in the 'milestones' array that span from the current sprint to the user's target timeline (e.g. 21 days to X months). Proportionately scale and spread the durations:
+    - If target timeline is 9 months, milestones periods must be: Milestone 1: "21 Days" (Current Sprint), Milestone 2: "1 - 3 Months" (Building Block), Milestone 3: "3 - 6 Months" (Momentum Period), Milestone 4: "6 - 9 Months" (Dream Realisation).
+    - If target timeline is 3 months: Milestone 1: "21 Days", Milestone 2: "1 Month", Milestone 3: "2 Months", Milestone 4: "3 Months".
+    - Adjust spans proportionally for other timeline targets. Each milestone description must cover the core focus, small win, and how they shift their identity to build the system habits that let them perform on default and realize their dream.
+
 
 GOAL-TYPE FRAMEWORKS (apply based on primaryGoalType):
 

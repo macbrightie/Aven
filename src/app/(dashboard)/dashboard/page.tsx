@@ -1,5 +1,6 @@
 'use client';
 import { GodModeWidget } from '@/components/admin/GodModeWidget';
+import posthog from 'posthog-js';
  
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
@@ -594,24 +595,24 @@ function HabitGrid({
         <div ref={dropdownRef} className="relative self-start md:self-auto flex-shrink-0 z-40 select-none">
           <button 
             onClick={() => setIsOpen(!isOpen)}
-            className="flex items-center gap-1.5 pl-[8px] pr-[4px] py-[4px] rounded-[6px] bg-[#1a1a1a] hover:bg-[#2A2A2E] text-white text-[12px] font-sans font-medium border border-white/10 outline-none cursor-pointer transition-colors shadow-sm select-none"
+            className="flex items-center gap-2 pl-[12px] pr-[6px] py-[6px] rounded-[6px] bg-[#1a1a1a] hover:bg-[#2A2A2E] text-white text-[18px] font-sans font-medium border border-white/10 outline-none cursor-pointer transition-colors shadow-sm select-none"
           >
             <span className="leading-none">
               {filter === 'overall' ? t('moves_checked', langKey) : t('specific_habits', langKey)}
             </span>
-            <svg width="10" height="6" viewBox="0 0 10 6" fill="none" stroke="currentColor" strokeWidth="2" className={`opacity-60 transition-transform ${isOpen ? 'rotate-180' : ''}`}>
+            <svg width="15" height="9" viewBox="0 0 10 6" fill="none" stroke="currentColor" strokeWidth="2" className={`opacity-60 transition-transform ${isOpen ? 'rotate-180' : ''}`}>
               <path d="M1 1l4 4 4-4" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </button>
           
           {isOpen && (
-            <div className="absolute right-0 mt-1.5 w-[160px] rounded-[8px] bg-[#1a1a1a] border border-white/10 shadow-lg py-1 z-50">
+            <div className="absolute right-0 mt-1.5 w-[240px] rounded-[8px] bg-[#1a1a1a] border border-white/10 shadow-lg py-2.5 z-50">
               <button
                 onClick={() => {
                   onFilterChange('overall');
                   setIsOpen(false);
                 }}
-                className={`w-full text-left px-3 py-1.5 text-[12.5px] font-sans transition-colors ${
+                className={`w-full text-left px-[18px] py-[9px] text-[18px] font-sans transition-colors ${
                   filter === 'overall' ? 'bg-white/10 text-white font-medium' : 'text-white/70 hover:text-white hover:bg-white/5'
                 }`}
               >
@@ -622,7 +623,7 @@ function HabitGrid({
                   onFilterChange('habit');
                   setIsOpen(false);
                 }}
-                className={`w-full text-left px-3 py-1.5 text-[12.5px] font-sans transition-colors ${
+                className={`w-full text-left px-[18px] py-[9px] text-[18px] font-sans transition-colors ${
                   filter === 'habit' ? 'bg-white/10 text-white font-medium' : 'text-white/70 hover:text-white hover:bg-white/5'
                 }`}
               >
@@ -669,13 +670,7 @@ function HabitGrid({
                         if (card.status === 'done') {
                           bgColor = '#1559EF';
                         } else if (checkedCount > 0 && taskItems.length > 0) {
-                          const percent = checkedCount / taskItems.length;
-                          let opacity = 0.15;
-                          if (percent >= 0.6) {
-                            opacity = 0.7;
-                          } else if (percent >= 0.3) {
-                            opacity = 0.4;
-                          }
+                          const opacity = checkedCount / taskItems.length;
                           bgColor = `rgba(21, 89, 239, ${opacity})`;
                         } else {
                           bgColor = 'rgba(255,255,255,0.15)';
@@ -1041,7 +1036,7 @@ function AdjustPlanModal({ isOpen, onClose, currentIntensity, currentTimelineMon
                   key={mode}
                   type="button"
                   onClick={() => setIntensity(mode)}
-                  className={`py-2 text-[12.5px] font-sans font-medium transition-all rounded-[7px] capitalize ${
+                  className={`py-2 text-[14px] font-sans font-medium transition-all rounded-[7px] capitalize ${
                     intensity === mode
                       ? 'bg-[#1a1a1a] text-white shadow-sm'
                       : 'text-black/60 hover:text-black/80'
@@ -1057,7 +1052,7 @@ function AdjustPlanModal({ isOpen, onClose, currentIntensity, currentTimelineMon
           <div className="flex flex-col">
             <div className="flex justify-between items-center mb-3">
               <Label>Dream Timeline</Label>
-              <span className="text-[13px] font-sans font-bold text-[#104d3b]">{timelineMonths} Months</span>
+              <span className="text-[14px] font-sans font-bold text-[#104d3b]">{timelineMonths} Months</span>
             </div>
             <Slider
               min={3}
@@ -1066,7 +1061,7 @@ function AdjustPlanModal({ isOpen, onClose, currentIntensity, currentTimelineMon
               value={[timelineMonths]}
               onValueChange={(vals) => setTimelineMonths(vals[0])}
             />
-            <div className="flex justify-between text-[10px] font-sans text-[#6f6f77] mt-2 select-none">
+            <div className="flex justify-between text-[12px] font-sans text-[#6f6f77] mt-2 select-none">
               <span>3 mos</span>
               <span>12 mos</span>
               <span>24 mos</span>
@@ -1083,9 +1078,9 @@ function AdjustPlanModal({ isOpen, onClose, currentIntensity, currentTimelineMon
               rows={4}
               value={changeDescription}
               onChange={(e) => setChangeDescription(e.target.value)}
-              className="w-full px-4 py-3 rounded-[12px] bg-[#ECE8E2] text-[#1a1a1a] text-[13.5px] font-sans border border-transparent outline-none focus:bg-white focus:border-black/10 focus:ring-1 focus:ring-black/10 transition-all shadow-inner placeholder-black/25 resize-none leading-relaxed"
+              className="w-full px-4 py-3 rounded-[12px] bg-[#ECE8E2] text-[#1a1a1a] text-[14px] font-sans border border-transparent outline-none focus:bg-white focus:border-black/10 focus:ring-1 focus:ring-black/10 transition-all shadow-inner placeholder-black/25 resize-none leading-relaxed"
             />
-            <span className="text-[11px] font-sans text-[#6f6f77] mt-1.5 leading-relaxed">
+            <span className="text-[12px] font-sans text-[#6f6f77] mt-1.5 leading-relaxed">
               ⚠️ Deylon will preserve all completed cards and rewrite remaining tasks to fit your updated parameters.
             </span>
           </div>
@@ -1283,6 +1278,7 @@ function RoadmapOverlay({ isOpen, onClose, plan, dailyCards }: RoadmapOverlayPro
             <div className="flex flex-col gap-3">
               <Link
                 href="/pro"
+                onClick={() => posthog.capture('upgrade_plan_clicked', { source: 'premium_upgrade_modal' })}
                 className="w-full py-3 bg-[#1559EF] hover:bg-[#3b7aff] text-white rounded-[12px] font-sans font-medium text-center transition-colors text-[14px]"
               >
                 Upgrade now
@@ -1577,14 +1573,14 @@ function SettingsModal({
                 <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                   {telegramConnected ? (
                     <>
-                      <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 border border-white/15 text-white text-[11px] font-sans font-medium">
+                      <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 border border-white/15 text-white text-[12px] font-sans font-medium">
                         <span className="w-1.5 h-1.5 rounded-full bg-[#3CD070] shadow-glow" />
                         {t('connected', langKey)}
                       </div>
                       <Button
                         size="sm"
                         variant="destructive"
-                        className="h-7 px-2.5 rounded-[8px] bg-red-500/10 hover:bg-red-500/20 text-red-400 border-none shadow-none text-[11px] font-sans font-medium cursor-pointer"
+                        className="h-7 px-2.5 rounded-[8px] bg-red-500/10 hover:bg-red-500/20 text-red-400 border-none shadow-none text-[12px] font-sans font-medium cursor-pointer"
                         onClick={onDisconnectTelegram}
                       >
                         Disconnect
@@ -1608,14 +1604,14 @@ function SettingsModal({
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="inline-flex items-center gap-1 px-2.5 py-1 text-[9.5px] font-sans font-bold uppercase tracking-wider bg-[#1559EF] text-white rounded-full select-none shadow-sm animate-pulse">
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 text-[12px] font-sans font-bold uppercase tracking-wider bg-[#1559EF] text-white rounded-full select-none shadow-sm animate-pulse">
                     <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" className="text-white flex-shrink-0">
                       <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
                     </svg>
                     Upgrade
                   </span>
                   {whatsappConnected && (
-                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 border border-white/15 text-white text-[11px] font-sans font-medium">
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 border border-white/15 text-white text-[12px] font-sans font-medium">
                       <span className="w-1.5 h-1.5 rounded-full bg-[#3CD070] shadow-glow" />
                       {t('connected', langKey)}
                     </div>
@@ -1631,7 +1627,7 @@ function SettingsModal({
                 <div className="relative">
                   <button 
                     onClick={() => setLangDropdownOpen(!langDropdownOpen)}
-                    className="flex items-center gap-2 px-4 py-2 rounded-[12px] bg-[#ECE8E2] hover:bg-[#E3DDD4] text-[#1a1a1a] text-[13.5px] font-sans transition-all duration-200 shadow-sm"
+                    className="flex items-center gap-2 px-4 py-2 rounded-[12px] bg-[#ECE8E2] hover:bg-[#E3DDD4] text-[#1a1a1a] text-[14px] font-sans transition-all duration-200 shadow-sm"
                   >
                     <span>{activeLanguage}</span>
                     <svg width="10" height="6" viewBox="0 0 10 6" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -1648,7 +1644,7 @@ function SettingsModal({
                             onChangeLanguage(lang);
                             setLangDropdownOpen(false);
                           }}
-                          className="w-full text-left px-4 py-2 text-[13px] font-sans hover:bg-black/[0.03] transition-colors"
+                          className="w-full text-left px-4 py-2 text-[14px] font-sans hover:bg-black/[0.03] transition-colors"
                         >
                           {lang}
                         </button>
@@ -1673,7 +1669,7 @@ function SettingsModal({
                       onClose();
                       await onResetAccount();
                     }}
-                    className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-[12px] text-[13px] font-sans font-medium cursor-pointer shadow-sm self-start sm:self-auto"
+                    className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-[12px] text-[14px] font-sans font-medium cursor-pointer shadow-sm self-start sm:self-auto"
                   >
                     Reset Account
                   </Button>
@@ -2286,28 +2282,28 @@ export default function DashboardPage() {
           </div>
         </main>
 
-        <footer className="px-3 md:px-8 py-5 flex items-center justify-between text-[11px] font-sans text-[#1a1a1a]/30 border-t border-black/5">
+        <footer className="px-3 md:px-8 py-5 flex items-center justify-between text-[12px] font-sans text-[#8B8B81] border-t border-black/5">
           <div className="flex items-center gap-4">
             <span className="font-sans">© Deylon 2026</span>
-            <span className="text-[#1a1a1a]/15">·</span>
+            <span className="text-[#8B8B81]/40">·</span>
             <button 
               onClick={(e) => {
                 e.preventDefault();
                 setShowPrivacyModal(true);
               }}
-              className="hover:text-[#1a1a1a]/55 transition-colors text-left font-sans outline-none"
+              className="hover:text-[#8B8B81]/80 transition-colors text-left font-sans outline-none"
             >
               Privacy.
             </button>
           </div>
           <div className="flex items-center gap-4">
-            <a href="#" aria-label="Instagram" className="hover:opacity-100 transition-opacity">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="#1a1a1a" fillOpacity="0.65">
+            <a href="https://www.instagram.com/getdeylon/" target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="hover:opacity-80 transition-opacity">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="#8B8B81">
                 <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0 2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 3.674a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/>
               </svg>
             </a>
-            <a href="#" aria-label="X" className="hover:opacity-100 transition-opacity">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="#1a1a1a" fillOpacity="0.65">
+            <a href="https://x.com/dbrightmac" target="_blank" rel="noopener noreferrer" aria-label="X" className="hover:opacity-80 transition-opacity">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="#8B8B81">
                 <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
               </svg>
             </a>
@@ -2409,6 +2405,7 @@ export default function DashboardPage() {
             </div>
             <Link
               href="/pro"
+              onClick={() => posthog.capture('upgrade_plan_clicked', { source: 'day_15_sprint_nudge' })}
               className="px-6 py-3 rounded-[8px] bg-white text-[#104D3B] text-[13px] font-sans font-semibold hover:bg-white/95 transition-all text-center whitespace-nowrap self-start md:self-auto hover:scale-[1.02] active:scale-[0.98]"
             >
               Upgrade to Pro
@@ -2526,6 +2523,7 @@ export default function DashboardPage() {
             <div className="mt-5">
               <Link
                 href="/pro"
+                onClick={() => posthog.capture('upgrade_plan_clicked', { source: 'sidebar_upgrade_card' })}
                 className="inline-flex items-center gap-2 px-5 py-2.5 rounded-[8px] bg-white/10 border border-white/10 text-white text-[12px] font-sans hover:bg-white/15 transition-colors"
               >
                 {t('upgrade_plan', langKey) || 'Upgrade plan'}
@@ -2539,28 +2537,28 @@ export default function DashboardPage() {
       </main>
 
       {/* ── Footer ── */}
-      <footer className="px-3 md:px-8 py-5 flex items-center justify-between text-[11px] font-sans text-[#1a1a1a]/30 border-t border-black/5">
+      <footer className="px-3 md:px-8 py-5 flex items-center justify-between text-[12px] font-sans text-[#8B8B81] border-t border-black/5">
         <div className="flex items-center gap-4">
           <span className="font-sans">© Deylon 2026</span>
-          <span className="text-[#1a1a1a]/15">·</span>
+          <span className="text-[#8B8B81]/40">·</span>
           <button 
             onClick={(e) => {
               e.preventDefault();
               setShowPrivacyModal(true);
             }}
-            className="hover:text-[#1a1a1a]/55 transition-colors text-left font-sans outline-none"
+            className="hover:text-[#8B8B81]/80 transition-colors text-left font-sans outline-none"
           >
             Privacy.
           </button>
         </div>
         <div className="flex items-center gap-4">
-          <a href="#" aria-label="Instagram" className="hover:opacity-100 transition-opacity">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="#1a1a1a" fillOpacity="0.65">
-              <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0 2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 3.674a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/>
+          <a href="https://www.instagram.com/getdeylon/" target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="hover:opacity-80 transition-opacity">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="#8B8B81">
+              <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0 2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 3.674a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/>
             </svg>
           </a>
-          <a href="#" aria-label="X" className="hover:opacity-100 transition-opacity">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="#1a1a1a" fillOpacity="0.65">
+          <a href="https://x.com/dbrightmac" target="_blank" rel="noopener noreferrer" aria-label="X" className="hover:opacity-80 transition-opacity">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="#8B8B81">
               <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
             </svg>
           </a>
