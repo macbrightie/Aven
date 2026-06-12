@@ -12,6 +12,7 @@ CRITICAL RULES:
 4. Keep the sequence logical. If they adjusted mid-sprint, ensure the next day continues smoothly from their last completed day.
 5. You MUST generate daily tasks for ALL remaining days from the start day up to Day 21. Do not skip any days, and do not truncate the list with placeholders.
 6. The output must be valid JSON matching the schema below.
+7. Day 7, Day 14, and Day 21 MUST be milestone checklist days representing clear "weekly quick wins" that sum up or showcase the week's progress (Day 7 is the baseline habit win; Day 14 is the depth check / integration win; Day 21 is the ultimate sprint victory win). The task text on Day 7, 14, and 21 must start with "Milestone Win: [Action]".
 
 RETURN ONLY VALID JSON - no preamble, no explanation, no markdown code blocks:
 

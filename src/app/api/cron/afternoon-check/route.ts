@@ -3,6 +3,7 @@ import { createServiceClient } from '@/lib/supabase/server';
 import { sendMessage } from '@/lib/telegram/bot';
 import { formatUserGreeting } from '@/lib/telegram/message';
 import { getDayNumber } from '@/lib/utils/date';
+import { parseTasks } from '@/lib/utils';
 
 export async function GET(request: NextRequest) {
   // Verify cron secret
@@ -75,15 +76,18 @@ export async function GET(request: NextRequest) {
           const messageText = `🌟 <b>${greeting}</b>\n\nI saw you checked off all tasks for today! Spectacular progress. Enjoy your evening!`;
           await sendMessage(user.telegram_chat_id!, messageText);
         } else if (card.status === 'pending') {
-          // Extract checklist sentences
-          const sentences = card.task
-            ? card.task
-                .split(/(?<=[.!?])\s+/)
-                .map((s: string) => s.trim())
-                .filter((s: string) => s.length > 2)
-            : [];
+          const taskItems = parseTasks(card.task);
+          const tasksList = taskItems.map((item) => {
+            let itemText = `⬜️ <b>${item.action}</b>`;
+            if (item.example) {
+              itemText += `\n   <i>${item.example}</i>`;
+            }
+            if (item.clue) {
+              itemText += `\n   <i>${item.clue}</i>`;
+            }
+            return itemText;
+          }).join('\n\n');
 
-          const tasksList = sentences.map((s: string) => `⬜️ ${s}`).join('\n');
           const messageText = `👋 <b>${greeting}</b>\n\nHow's your move going today? Here's what's on your list:\n\n${tasksList}\n\nRemember to check them off on the dashboard once completed! Tell me: how much time did you spend on this today?`;
 
           await sendMessage(user.telegram_chat_id!, messageText);

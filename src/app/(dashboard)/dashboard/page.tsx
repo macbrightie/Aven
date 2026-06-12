@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/Button';
 import { Label } from '@/components/ui/label';
 import { PrivacyModal } from '@/components/ui/PrivacyModal';
 import { EmbeddedChat } from '@/components/landing/EmbeddedChat';
+import { parseTasks } from '@/lib/utils';
 
 const mapDbMessagesToChat = (dbMessages: any[]): any[] => {
   return (dbMessages || []).map((m: any, idx: number) => ({
@@ -271,25 +272,19 @@ function FlashCard({
   const today = new Date();
   const formatted = `${today.getDate().toString().padStart(2,'0')}/${(today.getMonth()+1).toString().padStart(2,'0')}/${today.getFullYear()}`;
 
-  // Split taskText by sentences to dynamically generate the checklist
-  const sentences = taskText
-    ? taskText
-        .split(/(?<=[.!?])\s+/)
-        .map(s => s.trim())
-        .filter(s => s.length > 2)
-    : [];
+  const taskItems = parseTasks(taskText);
 
   const [checkedStates, setCheckedStates] = useState<boolean[]>([]);
 
   useEffect(() => {
-    if (checkedStatesFromDb && checkedStatesFromDb.length === sentences.length) {
+    if (checkedStatesFromDb && checkedStatesFromDb.length === taskItems.length) {
       setCheckedStates(checkedStatesFromDb);
     } else if (status === 'done') {
-      setCheckedStates(new Array(sentences.length).fill(true));
+      setCheckedStates(new Array(taskItems.length).fill(true));
     } else {
-      setCheckedStates(new Array(sentences.length).fill(false));
+      setCheckedStates(new Array(taskItems.length).fill(false));
     }
-  }, [status, taskText, sentences.length, checkedStatesFromDb]);
+  }, [status, taskText, taskItems.length, checkedStatesFromDb]);
 
   const toggleTask = async (idx: number, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -316,8 +311,8 @@ function FlashCard({
     setActiveFace('front');
   };
 
-  const completionPercentage = sentences.length 
-    ? Math.round((checkedStates.filter(Boolean).length / sentences.length) * 100) 
+  const completionPercentage = taskItems.length 
+    ? Math.round((checkedStates.filter(Boolean).length / taskItems.length) * 100) 
     : 0;
 
   return (
@@ -325,7 +320,13 @@ function FlashCard({
       
       {/* Front Face Content: 24px (p-6) padding all around */}
       <div className={`absolute inset-0 p-6 flex flex-col justify-between transition-opacity duration-300 z-10 ${activeFace !== 'front' ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
-        <div className="flex-1" />
+        <div className="flex-1 flex flex-col justify-start">
+          {(dayNumber === 7 || dayNumber === 14 || dayNumber === 21) && (
+            <div className="self-start px-2.5 py-1 rounded-[6px] bg-[#1a1a1a]/5 border border-[#1a1a1a]/10 text-[#a06f00] text-[9.5px] font-sans tracking-widest uppercase font-bold mb-2 select-none animate-pulse">
+              🏆 Weekly Milestone
+            </div>
+          )}
+        </div>
         <div className="flex items-end justify-between gap-2">
           <p className="text-[#1a1a1a] text-[16px] font-medium leading-[1.4] max-w-[170px] font-sans text-left">
             {isDate ? formatted : label}
@@ -371,9 +372,16 @@ function FlashCard({
 
           {/* Checklist Area (from flash cards.png): mt-12 ensures clean space below absolute button */}
           <div className="flex-1 flex flex-col justify-center gap-3 mt-12">
-            {sentences.length > 0 ? (
-              sentences.map((sentence, idx) => {
-                const isLast = idx === sentences.length - 1;
+            {(dayNumber === 7 || dayNumber === 14 || dayNumber === 21) && (
+              <div className="text-left mb-1 select-none">
+                <span className="text-[10px] font-sans text-[#FFD700] uppercase tracking-widest font-bold">
+                  🌟 Milestone Day {dayNumber} Win
+                </span>
+              </div>
+            )}
+            {taskItems.length > 0 ? (
+              taskItems.map((item, idx) => {
+                const isLast = idx === taskItems.length - 1;
                 const isChecked = checkedStates[idx] || false;
                 return (
                   <div
@@ -394,11 +402,27 @@ function FlashCard({
                         <div className="w-5 h-5 rounded-full border border-white/35 hover:border-white/70 transition-colors" />
                       )}
                     </div>
-                    <p className={`text-[13.5px] font-sans leading-[1.35] select-none transition-all duration-300 text-left ${
-                      isChecked ? 'text-white/40 line-through' : 'text-white opacity-90'
-                    }`}>
-                      {sentence}
-                    </p>
+                    <div className="flex flex-col text-left">
+                      <p className={`text-[13.5px] font-sans leading-[1.35] select-none transition-all duration-300 ${
+                        isChecked ? 'text-white/40 line-through' : 'text-white opacity-90'
+                      }`}>
+                        {item.action}
+                      </p>
+                      {item.example && (
+                        <p className={`text-[11.5px] font-sans leading-[1.3] mt-1 transition-all duration-300 ${
+                          isChecked ? 'text-white/20 line-through' : 'text-white/55'
+                        }`}>
+                          {item.example}
+                        </p>
+                      )}
+                      {item.clue && (
+                        <p className={`text-[11.5px] font-sans leading-[1.3] mt-0.5 transition-all duration-300 ${
+                          isChecked ? 'text-white/20 line-through' : 'text-white/55'
+                        }`}>
+                          {item.clue}
+                        </p>
+                      )}
+                    </div>
                   </div>
                 );
               })
@@ -638,20 +662,14 @@ function HabitGrid({
                     const card = dailyCards.find((c) => c.day_number === dayNum);
                     if (card) {
                       if (filter === 'overall') {
-                        const sentences = card.task
-                          ? card.task
-                              .split(/(?<=[.!?])\s+/)
-                              .map((s: any) => s.trim())
-                              .filter((s: any) => s.length > 2)
-                          : [];
-                        
+                        const taskItems = card.task ? parseTasks(card.task) : [];
                         const checkedStates = card.checked_states || [];
                         const checkedCount = checkedStates.filter(Boolean).length;
                         
                         if (card.status === 'done') {
                           bgColor = '#1559EF';
-                        } else if (checkedCount > 0 && sentences.length > 0) {
-                          const percent = checkedCount / sentences.length;
+                        } else if (checkedCount > 0 && taskItems.length > 0) {
+                          const percent = checkedCount / taskItems.length;
                           let opacity = 0.15;
                           if (percent >= 0.6) {
                             opacity = 0.7;
