@@ -2079,9 +2079,14 @@ export default function DashboardPage() {
       await supabase.from('daily_cards').delete().eq('user_id', authUser.id);
       await supabase.from('sprint_progress').delete().eq('user_id', authUser.id);
       await supabase.from('user_memories').delete().eq('user_id', authUser.id);
+      await supabase.from('conversations').delete().eq('user_id', authUser.id);
+      await supabase.from('whys').delete().eq('user_id', authUser.id);
+      await supabase.from('plan_updates').delete().eq('user_id', authUser.id);
+      await supabase.from('health_scores').delete().eq('user_id', authUser.id);
 
       localStorage.removeItem("deylon_onboarding_transcript");
       localStorage.removeItem("deylon_onboarding_email");
+      localStorage.removeItem("deylon_onboarding_completed");
 
       window.location.href = '/';
     } catch (err) {
