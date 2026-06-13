@@ -5,6 +5,7 @@ export interface DailyReminderData {
   duration: string;
   chainToGoal: string;
   appUrl: string;
+  sprintTheme?: string;
 }
 
 export interface WelcomeMessageData {
@@ -36,8 +37,9 @@ export function formatUserGreeting(preferredGreeting?: string | null, displayNam
 
 export function buildDailyReminder(data: DailyReminderData): string {
   const name = data.userName ? `Hey ${data.userName}` : 'Hey';
+  const themeText = data.sprintTheme ? `: ${data.sprintTheme}` : '';
   return [
-    `🌅 <b>${name} — Day ${data.dayNumber} of your 100-day challenge</b>`,
+    `🌅 <b>${name} — Day ${data.dayNumber} of your 21-day sprint${themeText}</b>`,
     ``,
     `📌 <b>Today's task:</b>`,
     `${data.task}`,

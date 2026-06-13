@@ -33,11 +33,11 @@ export async function GET(request: NextRequest) {
         // Get latest plan
         const { data: plan } = await supabase
           .from('plans')
-          .select('id, created_at, start_date')
+          .select('id, created_at, start_date, plan_data')
           .eq('user_id', user.id)
           .order('created_at', { ascending: false })
           .limit(1)
-          .single();
+          .maybeSingle();
 
         if (!plan) return;
 
@@ -46,16 +46,17 @@ export async function GET(request: NextRequest) {
           user.timezone
         );
 
-        if (dayNumber > 100) return; // Challenge complete
+        if (dayNumber > 21) return; // Sprint complete
 
-        // Get today's card
+        // Get today's card if not already revealed
         const { data: card } = await supabase
           .from('daily_cards')
           .select('*')
           .eq('user_id', user.id)
           .eq('plan_id', plan.id)
           .eq('day_number', dayNumber)
-          .single();
+          .is('revealed_at', null)
+          .maybeSingle();
 
         if (!card) return;
 
@@ -65,7 +66,7 @@ export async function GET(request: NextRequest) {
           .select('status')
           .eq('user_id', user.id)
           .eq('day_number', dayNumber - 1)
-          .single();
+          .maybeSingle();
 
         let messageText: string;
 
@@ -78,6 +79,7 @@ export async function GET(request: NextRequest) {
             duration: card.duration ?? '30 minutes',
             chainToGoal: card.chain_to_goal ?? 'your goal',
             appUrl: process.env.NEXT_PUBLIC_APP_URL!,
+            sprintTheme: (plan.plan_data as any)?.sprint_theme,
           });
         }
 

@@ -6,6 +6,7 @@ import { DailyChatService } from '@/lib/ai/services/daily-chat.service';
 import { MemoryService } from '@/lib/ai/services/memory.service';
 import { OnboardingService } from '@/lib/ai/services/onboarding.service';
 import { getDayNumber, getTodayISO, getTomorrowISO } from '@/lib/utils/date';
+import { parseTasks } from '@/lib/utils';
 
 interface TelegramUpdate {
   update_id: number;
@@ -339,6 +340,57 @@ export async function POST(request: NextRequest) {
               }
               return NextResponse.json({ ok: true });
             }
+          }
+        }
+      }
+
+      // 1.8 Intercept completion/done messages
+      const isCompletion = /^(done|check|completed|finished|task done|mark done|mark completed|all done|done today|i am done|i'm done)$/i.test(cleanText);
+      if (isCompletion) {
+        const { data: activePlan } = await supabase
+          .from('plans')
+          .select('id, created_at, start_date')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (activePlan) {
+          const dayNumber = getDayNumber(activePlan.start_date || new Date(activePlan.created_at), user.timezone || 'Africa/Lagos');
+          const { data: todayCard } = await supabase
+            .from('daily_cards')
+            .select('*')
+            .eq('user_id', user.id)
+            .eq('plan_id', activePlan.id)
+            .eq('day_number', dayNumber)
+            .maybeSingle();
+
+          if (todayCard) {
+            if (todayCard.status === 'done') {
+              await sendMessage(chatId, `✨ Today's moves are already marked as completed! Splendid work.`);
+              return NextResponse.json({ ok: true });
+            }
+
+            const taskItems = parseTasks(todayCard.task);
+            const checkedStates = Array(taskItems.length).fill(true);
+
+            const { error: updateErr } = await supabase
+              .from('daily_cards')
+              .update({
+                status: 'done',
+                completed_at: new Date().toISOString(),
+                checked_states: checkedStates
+              })
+              .eq('id', todayCard.id);
+
+            if (updateErr) {
+              console.error('[Telegram Webhook] Failed to mark task as done:', updateErr);
+              await sendMessage(chatId, `❌ Sorry, I couldn't update today's task. Please try checking it on the web dashboard.`);
+            } else {
+              const greeting = formatUserGreeting(user.preferred_greeting, user.display_name, user.email);
+              await sendMessage(chatId, `✅ <b>Awesome job, ${user.display_name || 'friend'}!</b>\n\nI've marked today's moves as completed on your dashboard. Keep up the phenomenal momentum! 🚀`);
+            }
+            return NextResponse.json({ ok: true });
           }
         }
       }

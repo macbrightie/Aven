@@ -69,9 +69,25 @@ export async function GET(request: NextRequest) {
 
         if (!card) return;
 
+        // 3.5 Check if yesterday was missed (streak broken)
+        let streakBrokenMessage = '';
+        if (dayNumber > 1) {
+          const { data: yesterdayCard } = await supabase
+            .from('daily_cards')
+            .select('status')
+            .eq('user_id', user.id)
+            .eq('plan_id', plan.id)
+            .eq('day_number', dayNumber - 1)
+            .maybeSingle();
+            
+          if (yesterdayCard && yesterdayCard.status === 'pending') {
+            streakBrokenMessage = `\n\n<i>(P.S. I noticed we missed yesterday's move, which resets the active streak. Let's start fresh and build it back up today.)</i>`;
+          }
+        }
+
         // 4. Send morning task reminder
         const greeting = formatUserGreeting(user.preferred_greeting, user.display_name, user.email);
-        const messageText = `🌅 <b>${greeting}</b>\n\nHere's a quick reminder of your daily move today:\n\n📌 <b>${card.task}</b>\n\n⏱ <i>${card.duration || '30 mins'}</i>\n\nYou've got this! Let's get it done today.`;
+        const messageText = `🌅 <b>${greeting}</b>\n\nHere's a quick reminder of your daily move today:\n\n📌 <b>${card.task}</b>\n\n⏱ <i>${card.duration || '30 mins'}</i>\n\nYou've got this! Let's get it done today.${streakBrokenMessage}`;
 
         await sendMessage(user.telegram_chat_id!, messageText);
         sentCount++;

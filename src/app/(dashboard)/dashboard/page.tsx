@@ -26,22 +26,33 @@ const mapDbMessagesToChat = (dbMessages: any[]): any[] => {
   }));
 };
 
-function calculateLongestStreak(cards: any[]): number {
+function getCalendarDayNumber(startDateStr: string): number {
+  const start = new Date(startDateStr);
+  start.setHours(0, 0, 0, 0);
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+  const diffTime = now.getTime() - start.getTime();
+  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+  return Math.max(1, diffDays + 1);
+}
+
+function calculateActiveStreak(cards: any[], currentDayNumber: number): number {
   if (!cards || cards.length === 0) return 0;
-  const sorted = [...cards].sort((a, b) => a.day_number - b.day_number);
-  let maxStreak = 0;
-  let currentStreak = 0;
+  
+  const sorted = [...cards].sort((a, b) => b.day_number - a.day_number);
+  let streak = 0;
+  
   for (const card of sorted) {
-    if (card.status === 'done') {
-      currentStreak++;
-      if (currentStreak > maxStreak) {
-        maxStreak = currentStreak;
+    if (card.day_number <= currentDayNumber) {
+      if (card.status === 'done') {
+        streak++;
+      } else if (card.status === 'pending' && card.day_number < currentDayNumber) {
+        // Streak broken by a missed past day
+        break;
       }
-    } else {
-      currentStreak = 0;
     }
   }
-  return maxStreak;
+  return streak;
 }
  
 type ViewMode = 'Grid' | 'Swipe';
@@ -255,6 +266,7 @@ interface FlashCardProps {
   label?: string;
   onStatusChange?: (cardId: string, status: 'pending' | 'done' | 'adjusted' | 'partial', checkedStates: boolean[]) => Promise<void>;
   langKey?: string;
+  isLocked?: boolean;
 }
 
 
@@ -267,7 +279,8 @@ function FlashCard({
   isDate = false, 
   label, 
   onStatusChange,
-  langKey = 'English'
+  langKey = 'English',
+  isLocked = false
 }: FlashCardProps) {
   const [activeFace, setActiveFace] = useState<'front' | 'black' | 'analytics'>('front');
   const today = new Date();
@@ -304,6 +317,7 @@ function FlashCard({
 
   const handleDotClick = (e: React.MouseEvent) => {
     e.stopPropagation();
+    if (isLocked) return;
     setActiveFace('black');
   };
 
@@ -317,12 +331,17 @@ function FlashCard({
     : 0;
 
   return (
-    <div className="w-full max-w-[280px] flex-shrink-0 rounded-[16px] bg-[#f0ede6] relative overflow-hidden h-[430px] transition-all duration-500 shadow-sm border border-black/5 flex flex-col justify-between">
+    <div className={`w-full max-w-[280px] flex-shrink-0 rounded-[16px] bg-[#f0ede6] relative overflow-hidden h-[430px] transition-all duration-500 shadow-sm border border-black/5 flex flex-col justify-between ${isLocked ? 'opacity-50 grayscale select-none' : ''}`}>
       
       {/* Front Face Content: 24px (p-6) padding all around */}
       <div className={`absolute inset-0 p-6 flex flex-col justify-between transition-opacity duration-300 z-10 ${activeFace !== 'front' ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
         <div className="flex-1 flex flex-col justify-start">
-          {(dayNumber === 7 || dayNumber === 14 || dayNumber === 21) && (
+          {isLocked && (
+            <div className="self-start px-2.5 py-1 rounded-[6px] bg-red-500/10 border border-red-500/20 text-red-700 text-[10px] font-sans tracking-widest uppercase font-bold mb-2 select-none">
+              🔒 MISSED
+            </div>
+          )}
+          {!isLocked && (dayNumber === 7 || dayNumber === 14 || dayNumber === 21) && (
             <div className="self-start px-2.5 py-1 rounded-[6px] bg-[#1a1a1a]/5 border border-[#1a1a1a]/10 text-[#a06f00] text-[9.5px] font-sans tracking-widest uppercase font-bold mb-2 select-none animate-pulse">
               🏆 Weekly Milestone
             </div>
@@ -335,7 +354,7 @@ function FlashCard({
           {/* Black Dot: 24x24px */}
           <button
             onClick={handleDotClick}
-            className="w-6 h-6 rounded-full bg-[#1a1a1a] flex-shrink-0 cursor-pointer hover:scale-110 active:scale-95 transition-transform duration-300 relative z-20 flex items-center justify-center"
+            className={`w-6 h-6 rounded-full bg-[#1a1a1a] flex-shrink-0 transition-transform duration-300 relative z-20 flex items-center justify-center ${isLocked ? 'opacity-20 cursor-not-allowed' : 'cursor-pointer hover:scale-110 active:scale-95'}`}
             aria-label="Reveal plan"
           />
         </div>
@@ -1781,6 +1800,7 @@ export default function DashboardPage() {
   const [whatsappConnected, setWhatsappConnected] = useState(false);
   const [activeLanguage, setActiveLanguage] = useState('Auto-detect');
   const [habitFilter, setHabitFilter] = useState<'overall' | 'habit'>('overall');
+  const [pendingCompletion, setPendingCompletion] = useState<{cardId: string, checkedStates: boolean[]} | null>(null);
 
   // Supabase Fetch Data States
   const [loading, setLoading] = useState(true);
@@ -1788,10 +1808,11 @@ export default function DashboardPage() {
   const [plan, setPlan] = useState<any>(null);
   const [cards, setCards] = useState<any[]>([]);
   const [activeDay, setActiveDay] = useState(1);
+  const [calendarDayNum, setCalendarDayNum] = useState(1);
   const [completedGoals, setCompletedGoals] = useState<string[]>([]);
   const [stats, setStats] = useState({
     goalsPending: 0,
-    longestStreak: 0,
+    activeStreak: 0,
     dreamDuration: 5,
   });
 
@@ -1897,9 +1918,25 @@ export default function DashboardPage() {
 
             const pendingCard = dailyCards.find((c) => c.status === 'pending');
             const dayNum = pendingCard ? pendingCard.day_number : 1;
-            setActiveDay(dayNum);
             
-            setActivePage(Math.min(7, Math.ceil(dayNum / 3)));
+            const cDay = getCalendarDayNumber(activePlan.start_date || activePlan.created_at);
+            setCalendarDayNum(cDay);
+
+            const supporting = activePlan.plan_data?.supporting_goals || [];
+            const completed = activePlan.plan_data?.completed_goals || [];
+            const goalsPending = (supporting.length + 1) - completed.length;
+            const activeStreak = calculateActiveStreak(dailyCardsList, cDay);
+            const dreamDuration = activePlan.timeline_months || activePlan.plan_data?.timeline_months || 12;
+
+            setStats({
+              goalsPending,
+              activeStreak,
+              dreamDuration
+            });
+
+            // Active UI focus day is the earliest pending day or the calendar day
+            setActiveDay(Math.min(dayNum, cDay));
+            setActivePage(Math.min(7, Math.ceil(Math.min(dayNum, cDay) / 3)));
           }
 
           // Trigger Telegram connect prompt if not connected and not shown in this session yet
@@ -1965,18 +2002,6 @@ export default function DashboardPage() {
             }
           }
         }
-
-        // 4. Fetch metrics
-        const compGoals = activePlan?.plan_data?.completed_goals || [];
-        setCompletedGoals(compGoals);
-
-        const supportingGoalsLength = activePlan?.plan_data?.supporting_goals?.length || 0;
-
-        setStats({
-          longestStreak: calculateLongestStreak(dailyCardsList),
-          goalsPending: (supportingGoalsLength + 1) - compGoals.length,
-          dreamDuration: activePlan?.timeline_months || (activePlan?.timeline_years ? activePlan.timeline_years * 12 : 60),
-        });
 
       } catch (err) {
         console.error('[Dashboard Load Error]:', err);
@@ -2159,7 +2184,19 @@ export default function DashboardPage() {
     }
   };
 
-  const handleStatusChange = async (
+  const handleCardStatusChange = async (
+    cardId: string, 
+    newStatus: 'pending' | 'done' | 'adjusted' | 'partial',
+    checkedStates: boolean[]
+  ) => {
+    if (newStatus === 'done') {
+      setPendingCompletion({ cardId, checkedStates });
+      return;
+    }
+    await executeCardStatusChange(cardId, newStatus, checkedStates);
+  };
+
+  const executeCardStatusChange = async (
     cardId: string, 
     newStatus: 'pending' | 'done' | 'adjusted' | 'partial',
     checkedStates: boolean[]
@@ -2177,14 +2214,12 @@ export default function DashboardPage() {
 
       if (error) throw error;
 
-      setCards((prev) => {
-        const updated = prev.map((c) => (c.id === cardId ? { ...c, status: newStatus, checked_states: checkedStates } : c));
-        setStats((s) => ({
-          ...s,
-          longestStreak: calculateLongestStreak(updated)
-        }));
-        return updated;
-      });
+      const updated = cards.map(c => c.id === cardId ? { ...c, status: newStatus, checked_states: checkedStates } : c);
+      setCards(updated);
+      setStats(prev => ({
+        ...prev,
+        activeStreak: calculateActiveStreak(updated, calendarDayNum)
+      }));
     } catch (err) {
       console.error('[handleStatusChange Error]:', err);
     }
@@ -2414,25 +2449,6 @@ export default function DashboardPage() {
         )}
 
         <div className="bg-white rounded-[20px] border border-black/5 p-5 mb-5">
-          {/* Commented out Grid/Swipe view mode selector per user request */}
-          {/* 
-          <div className="flex justify-center mb-5">
-            <div className="flex items-center bg-[rgba(39,39,42,0.06)] rounded-[8px] p-0.5">
-              {(['Grid','Swipe'] as ViewMode[]).map((m) => (
-                <button
-                  key={m}
-                  onClick={() => setViewMode(m)}
-                  className={`px-5 py-1.5 text-[13px] font-sans transition-colors rounded-[6px] ${
-                    viewMode === m ? 'bg-white text-[#1a1a1a] font-medium shadow-sm' : 'bg-transparent text-[#6F6F77] hover:text-[#1a1a1a]/60'
-                  }`}
-                >
-                  {m}
-                </button>
-              ))}
-            </div>
-          </div>
-          */}
-
           <div className="text-left px-[1.5%] mb-6 mt-1">
             <h2 className="text-[#1a1a1a] text-[28px] font-sans font-medium tracking-tight">
               {t('here_are_move_cards', langKey)}
@@ -2442,7 +2458,7 @@ export default function DashboardPage() {
           <div className="flex flex-wrap gap-4 px-[1.5%]">
             {Array.from({ length: cardsPerPage }).map((_, i) => {
               const dayNum = (activePage - 1) * cardsPerPage + i + 1;
-              if (dayNum > 21) return null; // Assuming 21-day plan
+              if (dayNum > 21) return null;
               const card = getCardForDay(dayNum);
               return (
                 <FlashCard
@@ -2453,8 +2469,9 @@ export default function DashboardPage() {
                   status={card?.status ?? 'pending'}
                   checkedStatesFromDb={card?.checked_states}
                   label={`Day ${dayNum} Move`}
-                  onStatusChange={handleStatusChange}
+                  onStatusChange={handleCardStatusChange}
                   langKey={langKey}
+                  isLocked={card?.status === 'pending' && dayNum < calendarDayNum}
                 />
               );
             })}
@@ -2466,9 +2483,7 @@ export default function DashboardPage() {
               return (
                 <button
                   key={n}
-                  onClick={() => {
-                    setActivePage(n);
-                  }}
+                  onClick={() => setActivePage(n)}
                   className={`w-10 h-10 rounded-[8px] text-[13px] font-sans font-medium transition-colors ${
                     activePage === n
                       ? 'bg-[#1a1a1a] text-white'
@@ -2499,7 +2514,7 @@ export default function DashboardPage() {
             <MapBanner onClick={() => setShowRoadmap(true)} />
             <div className="flex flex-col md:grid md:grid-cols-3 gap-3">
               <StatCard value={stats.goalsPending.toString()} label={t('goals_pending', langKey)} accent />
-              <StatCard value={stats.longestStreak.toString()} unit="DAYS" label={t('longest_streak', langKey)} />
+              <StatCard value={stats.activeStreak.toString()} unit="DAYS" label={t('longest_streak', langKey)} />
               <StatCard value={stats.dreamDuration.toString()} unit="MONTHS" label={t('dream_duration', langKey)} />
             </div>
           </div>
@@ -2629,6 +2644,44 @@ export default function DashboardPage() {
         onConnect={handleToggleTelegram}
       />
       <GodModeWidget />
+      
+      {/* Task Completion Confirmation Modal */}
+      <Dialog open={!!pendingCompletion} onOpenChange={(open) => !open && setPendingCompletion(null)}>
+        <DialogContent className="bg-white max-w-[400px] border-black/10 rounded-[20px] p-6 text-center">
+          <DialogHeader>
+            <DialogTitle className="text-[20px] font-sans font-medium text-[#1a1a1a] mb-2 text-center">
+              Are you sure?
+            </DialogTitle>
+            <DialogDescription className="text-[14.5px] font-sans text-[#6F6F77] text-center leading-relaxed">
+              Just a quick check—did you actually complete the task? <br/><br/>
+              Remember, you are doing this to <b>{plan?.primary_goal || 'achieve your goal'}</b>. Don't cheat your own progress!
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex flex-col gap-3 mt-6">
+            <Button
+              onClick={() => {
+                if (pendingCompletion) {
+                  executeCardStatusChange(pendingCompletion.cardId, 'done', pendingCompletion.checkedStates);
+                  setPendingCompletion(null);
+                }
+              }}
+              className="w-full h-[48px] rounded-[14px] bg-[#1a1a1a] text-white font-sans text-[15px] font-medium hover:bg-black/90 active:scale-[0.98] transition-all"
+            >
+              Yes, I did the work
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setPendingCompletion(null);
+                // Revert UI checked state by ignoring
+              }}
+              className="w-full h-[48px] rounded-[14px] border-black/10 text-[#1a1a1a] font-sans text-[15px] font-medium hover:bg-black/5 active:scale-[0.98] transition-all"
+            >
+              Wait, not yet
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

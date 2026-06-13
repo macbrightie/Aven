@@ -10,7 +10,7 @@ function BuildingClient() {
     'Building your plan...',
     'Analyzing your goals...',
     'Breaking 1-year into quarters...',
-    'Writing your first 100-day challenge...',
+    'Writing your first 21-day sprint challenge...',
     'Almost ready.',
   ]);
   const [stepIndex, setStepIndex] = useState(0);
